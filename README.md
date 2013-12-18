@@ -27,11 +27,14 @@ Additional modules
 The cost functions pluggable to solver:
 
 * nova/scheduler/solvers/costs/ram_cost.py      - Cost function that can help to balance (or stack) ram usage of all hosts
+    - Note: requires scheduler hint: ram_cost_optimization_multiplier=<the multiplier number>
 * nova/scheduler/solvers/costs/ip_distance_cost.py      - Cost function that evaluates the distance between a colume and a vm using ip address
+    - Note: requires scheuler hint: ip_distance_cost_volume_id=<volume id>
 
 The linear constraints that are pluggable to solver:
 
 * nova/scheduler/solvers/linearconstraints/affinity_constraint.py       - Constraint that forces instances to be placed away from a set of instances, or at the same host as a set of instances
+    - Note: requires scheduler hint: different_host=<list of instance uuids> or same_host=<list of instance uuids>
 * nova/scheduler/solvers/linearconstraints/num_hosts_per_instance_constraint.py     - Constraint that forces each instance to be placed in exactly certain number (normally 1) of hosts, this is necessary for getting correct solution from solver
 * nova/scheduler/solvers/linearconstraints/resource_allocation_constraint.py        - Constraints that ensure host resources (ram, disk, vcpu, etc.) not to be over allocated
 
