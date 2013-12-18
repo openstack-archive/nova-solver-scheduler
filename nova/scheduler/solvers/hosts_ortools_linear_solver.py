@@ -54,6 +54,19 @@ class HostsOrtoolsLinearSolver(novasolvers.BaseHostSolver):
         self.cost_classes = []
         self.cost_weights = {}
         self.constraint_classes = []
+        cost_handler = costs.CostHandler()
+        all_cost_classes = cost_handler.get_all_classes()
+        for costName in CONF.scheduler_solver_costs:
+            for costCls in all_cost_classes:
+                if costCls.__name__ == costName:
+                    self.cost_classes.append(costCls)
+        constraint_handler = linearconstraints.LinearConstraintHandler()
+        all_constraint_classes = constraint_handler.get_all_classes()
+        for constraintName in CONF.scheduler_solver_constraints:
+            for constraintCls in all_constraint_classes:
+                if constraintCls.__name__ == constraintName:
+                    self.constraint_classes.append(constraintCls)
+        self.cost_weights = CONF.scheduler_solver_cost_weights
         
     def host_solve(self, hosts, instance_uuids, request_spec, filter_properties):
         """ This method returns a list of tuples - (host, instance_uuid) that are returned by the solver
@@ -83,11 +96,9 @@ class HostsOrtoolsLinearSolver(novasolvers.BaseHostSolver):
         # adjacency matrix specifying whether an instance is assigned to a host (variables to be solved)
         variables = [[solver.IntVar(0, 1, 'variables[%i,%i]' % (i, j)) for j in range(num_instances)] for i in range(num_hosts)]
         
-        for costName in CONF.scheduler_solver_costs:
-            self.cost_classes.append(importutils.import_object(costName))
-        for constraintName in CONF.scheduler_solver_constraints:
-            self.constraint_classes.append(importutils.import_object(constraintName,variables,hosts,instance_uuids,request_spec,filter_properties))
-        self.cost_weights = CONF.scheduler_solver_cost_weights
+        # create cost and constraint instances from their classes
+        self.cost_objects = [cost() for cost in self.cost_classes]
+        self.constraint_objects = [constraint(variables,hosts,instance_uuids,request_spec,filter_properties) for constraint in self.constraint_classes]
         
         #costs = [  # Instances
         #          # 1 2 3 4 5
@@ -98,10 +109,10 @@ class HostsOrtoolsLinearSolver(novasolvers.BaseHostSolver):
         #Creates a list of costs of each Host-Instance assignment
         costs = [[0 for j in range(num_instances)] for i in range(num_hosts)]
         
-        for costClass in self.cost_classes:
-            cost = costClass.get_cost_matrix(hosts, instance_uuids, request_spec, filter_properties)
-            cost = costClass.normalize_cost_matrix(cost,0.0,1.0)
-            weight = float(self.cost_weights[costClass.__class__.__name__])
+        for costObject in self.cost_objects:
+            cost = costObject.get_cost_matrix(hosts, instance_uuids, request_spec, filter_properties)
+            cost = costObject.normalize_cost_matrix(cost,0.0,1.0)
+            weight = float(self.cost_weights[costObject.__class__.__name__])
             LOG.debug(_('The cost matrix is {}'.format(cost)))
             LOG.debug(_('Weight equals {}'.format(weight)))
             costs = [[costs[i][j] + weight * cost[i][j] for j in range(num_instances)] for i in range(num_hosts)]
@@ -110,10 +121,10 @@ class HostsOrtoolsLinearSolver(novasolvers.BaseHostSolver):
         objfunc = solver.Sum([costs[i][j]*variables[i][j] for i in range(num_hosts) for j in range(num_instances)])
         
         # get linear constraints
-        for constraint in self.constraint_classes:
-            coefficient_matrix = constraint.get_coefficient_matrix(hosts,instance_uuids,request_spec,filter_properties)
-            variable_matrix = constraint.get_variable_matrix(variables,hosts,instance_uuids,request_spec)
-            operations = constraint.get_operations(hosts,instance_uuids,request_spec)
+        for constraintObject in self.constraint_objects:
+            coefficient_matrix = constraintObject.get_coefficient_matrix(variables,hosts,instance_uuids,request_spec,filter_properties)
+            variable_matrix = constraintObject.get_variable_matrix(variables,hosts,instance_uuids,request_spec,filter_properties)
+            operations = constraintObject.get_operations(variables,hosts,instance_uuids,request_spec,filter_properties)
             for i in range(len(operations)):
                 operation = operations[i]
                 len_vector = len(variable_matrix[i])
