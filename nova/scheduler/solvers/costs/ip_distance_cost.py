@@ -30,7 +30,7 @@ class IpDistanceCost(solvercosts.BaseCost):
     using IP addresses.
     """
     
-    hint_name = 'same_host_volume_id'
+    hint_name = 'ip_distance_cost_volume_id'
     
     def get_cost_name(self):
         return 'IpDistanceCost'

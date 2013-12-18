@@ -26,7 +26,7 @@ LOG = logging.getLogger(__name__)
 
 
 ram_weight_opts = [
-        cfg.FloatOpt('ram_weight_multiplier',
+        cfg.FloatOpt('ram_cost_optimization_multiplier',
                      default=1.0,
                      help='Multiplier used for ram optimization cost metric. This '
                           'solver uses a LP minimization problem. So a negative '
@@ -36,7 +36,7 @@ CONF.register_opts(ram_weight_opts)
 
 class RamCost(solvercosts.BaseCost):
     """Calculation of ram cost:
-    host.free_ram_mb*CONF.ram_weight_multiplier .
+    host.free_ram_mb*CONF.ram_cost_optimization_multiplier .
     """
     def get_cost_name(self):
         return self.__name__
@@ -48,6 +48,6 @@ class RamCost(solvercosts.BaseCost):
         else:
             num_instances = request_spec.get('num_instances', 1)
         
-        costs = [[hosts[i].free_ram_mb*CONF.ram_weight_multiplier for j in range(num_instances)] for i in range(num_hosts)]
+        costs = [[hosts[i].free_ram_mb*CONF.ram_cost_optimization_multiplier for j in range(num_instances)] for i in range(num_hosts)]
         
         return costs
