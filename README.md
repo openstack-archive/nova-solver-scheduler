@@ -58,10 +58,13 @@ scheduler_host_solver = nova.scheduler.solvers.hosts_pulp_solver.HostsPulpSolver
 The following configuration options need to be added to nova.conf if using these solvers: hosts_pulp_solver_v2.py, hosts_ortools_linear_solver.py
 
 * This is for setting the cost functions that are used in the solver
+
 scheduler_solver_costs = RamCost, IpDistanceCost
 
 * This is for setting the weight of each cost
+
 scheduler_solver_cost_weights = RamCost:0.7, IpDistanceCost:0.2
 
 * This is for setting the constraints used in the solver
+
 scheduler_solver_constraints = NumHostsPerInstanceConstraint, MaxDiskAllocationPerHostConstraint, MaxRamAllocationPerHostConstraint
