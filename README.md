@@ -16,10 +16,30 @@ The code includes a reference implementation of a solver that models the schedul
 
 *  nova/scheduler/solvers/hosts_pulp_solver.py
 
+There are two examples of pluggable solvers using coinor-pulp or or-tools package, where costs functions and linear constraints can be plugged into the solver.
+
+*  nova/scheduler/solvers/hosts_pulp_solver_v2.py
+*  nova/scheduler/solvers/hosts_ortools_linear_solver.py
+
+Additional modules
+==================
+
+The cost functions pluggable to solver:
+
+* nova/scheduler/solvers/costs/ram_cost.py      - Cost function that can help to balance (or stack) ram usage of all hosts
+* nova/scheduler/solvers/costs/ip_distance_cost.py      - Cost function that evaluates the distance between a colume and a vm using ip address
+
+The linear constraints that are pluggable to solver:
+
+* nova/scheduler/solvers/linearconstraints/affinity_constraint.py       - Constraint that forces instances to be placed away from a set of instances, or at the same host as a set of instances
+* nova/scheduler/solvers/linearconstraints/num_hosts_per_instance_constraint.py     - Constraint that forces each instance to be placed in exactly certain number (normally 1) of hosts, this is necessary for getting correct solution from solver
+* nova/scheduler/solvers/linearconstraints/resource_allocation_constraint.py        - Constraints that ensure host resources (ram, disk, vcpu, etc.) not to be over allocated
+
 
 Requirements:
 =============
 * coinor-pulp>=1.0.4
+* or-tools>=1.0.2902
   
 Configurations:
 ==============
@@ -35,3 +55,13 @@ scheduler_driver = nova.scheduler.solver_scheduler.ConstraintSolverScheduler
 scheduler_host_solver = nova.scheduler.solvers.hosts_pulp_solver.HostsPulpSolver
 
 
+The following configuration options need to be added to nova.conf if using these solvers: hosts_pulp_solver_v2.py, hosts_ortools_linear_solver.py
+
+* This is for setting the cost functions that are used in the solver
+scheduler_solver_costs = RamCost, IpDistanceCost
+
+* This is for setting the weight of each cost
+scheduler_solver_cost_weights = RamCost:0.7, IpDistanceCost:0.2
+
+* This is for setting the constraints used in the solver
+scheduler_solver_constraints = NumHostsPerInstanceConstraint, MaxDiskAllocationPerHostConstraint, MaxRamAllocationPerHostConstraint
