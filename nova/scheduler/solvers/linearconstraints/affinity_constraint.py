@@ -91,7 +91,7 @@ class SameHostConstraint(AffinityConstraint):
         """Giving demand as coefficient and supply as constant."""
         context = filter_properties['context']
         scheduler_hints = filter_properties.get('scheduler_hints', {})
-        affinity_uuids = scheduler_hints.get('different_host', [])
+        affinity_uuids = scheduler_hints.get('same_host', [])
         if isinstance(affinity_uuids, basestring):
             affinity_uuids = [affinity_uuids]
         coefficient_matrix = []
