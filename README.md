@@ -26,10 +26,12 @@ Configurations:
 
 The following additional configuration options have to be added to nova.conf file:
 
-* This is for changing the scheduler driver used by Nova
+* This is for changing the scheduler driver used by Nova.
+
 scheduler_driver = nova.scheduler.solver_scheduler.ConstraintSolverScheduler
 
-* This is for changing the solver module to be used by the above solver scheduler. If you implement your own constraints modules with constraints for your use cases, update this option
+* This is for changing the solver module to be used by the above solver scheduler. If you implement your own constraints modules with constraints for your use cases, update this option.
+
 scheduler_host_solver = nova.scheduler.solvers.hosts_pulp_solver.HostsPulpSolver
 
 
