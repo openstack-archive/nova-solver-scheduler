@@ -129,7 +129,8 @@ class HostsPulpSolver(novasolvers.BaseHostSolver):
             for i in range(len(operations)):
                 operation = operations[i]
                 len_vector = len(variable_matrix[i])
-                prob += operation(lpSum([coefficient_matrix[i][j] * variable_matrix[i][j] for j in range(len_vector)])), "Sum_of_Resource_%s" % i + "_provided_by_Host_%s" % j
+                prob += operation(lpSum([coefficient_matrix[i][j] * variable_matrix[i][j] for j in range(len_vector)])),\
+                        "Costraint_Name_%s" % constraintObject.__class__.__name__ + "_By_Host_%s" % i
         
         # The problem data is written to an .lp file
         prob.writeLP("HostsPulpSolver.lp")
