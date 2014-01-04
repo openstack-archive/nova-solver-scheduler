@@ -32,9 +32,6 @@ class IpDistanceCost(solvercosts.BaseCost):
     
     hint_name = 'ip_distance_cost_volume_id'
     
-    def get_cost_name(self):
-        return 'IpDistanceCost'
-    
     def get_cost_matrix(self,hosts,instance_uuids,request_spec,filter_properties):
         num_hosts = len(hosts)
         if instance_uuids:

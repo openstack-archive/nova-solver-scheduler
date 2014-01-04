@@ -35,11 +35,7 @@ ram_weight_opts = [
 CONF.register_opts(ram_weight_opts)
 
 class RamCost(solvercosts.BaseCost):
-    """Calculation of ram cost:
-    host.free_ram_mb*CONF.ram_cost_optimization_multiplier .
-    """
-    def get_cost_name(self):
-        return self.__name__
+    """The cost is evaluated by hosts' free ram and a user-defined multiplier."""
     
     def get_cost_matrix(self,hosts,instance_uuids,request_spec,filter_properties):
         num_hosts = len(hosts)

@@ -13,7 +13,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-# add pluggable constraints
+"""
+Scheduler linear constraint solver using or-tools moduler.
+The cost functions and linear constraints are pluggable and
+configurable by user.
+"""
 
 from oslo.config import cfg
 
@@ -23,22 +27,23 @@ from nova.openstack.common import importutils
 from nova.scheduler import solvers as novasolvers
 from nova.scheduler.solvers import costs
 from nova.scheduler.solvers import linearconstraints
-#from pulp import *
+
 from linear_solver import pywraplp
 
 LOG = logging.getLogger(__name__)
 
-scheduler_solver_costs_opt = cfg.ListOpt('scheduler_solver_costs',
-        default=[
-                'nova.scheduler.solvers.costs.ram_cost.RamCost'
-                ],
+scheduler_solver_costs_opt = cfg.ListOpt(
+        'scheduler_solver_costs',
+        default=['nova.scheduler.solvers.costs.ram_cost.RamCost'],
         help='Which cost matrices to use in the scheduler solver')
 
-scheduler_solver_cost_weights_opt = cfg.DictOpt('scheduler_solver_cost_weights',
+scheduler_solver_cost_weights_opt = cfg.DictOpt(
+        'scheduler_solver_cost_weights',
         default={'RamCost':0.0},
         help='assign the weights for each cost')
 
-scheduler_solver_constraints_opt = cfg.ListOpt('scheduler_solver_constraints',
+scheduler_solver_constraints_opt = cfg.ListOpt(
+        'scheduler_solver_constraints',
         default=[],
         help='which constraints to be used in scheduler solver')
 
@@ -54,18 +59,22 @@ class HostsOrtoolsLinearSolver(novasolvers.BaseHostSolver):
         self.cost_classes = []
         self.cost_weights = {}
         self.constraint_classes = []
+        
+        # Get cost classes.
         cost_handler = costs.CostHandler()
         all_cost_classes = cost_handler.get_all_classes()
         for costName in CONF.scheduler_solver_costs:
             for costCls in all_cost_classes:
                 if costCls.__name__ == costName:
                     self.cost_classes.append(costCls)
+        # Get constraint classes.
         constraint_handler = linearconstraints.LinearConstraintHandler()
         all_constraint_classes = constraint_handler.get_all_classes()
         for constraintName in CONF.scheduler_solver_constraints:
             for constraintCls in all_constraint_classes:
                 if constraintCls.__name__ == constraintName:
                     self.constraint_classes.append(constraintCls)
+        # Get cost weights.
         self.cost_weights = CONF.scheduler_solver_cost_weights
         
     def host_solve(self, hosts, instance_uuids, request_spec, filter_properties):
@@ -75,40 +84,31 @@ class HostsOrtoolsLinearSolver(novasolvers.BaseHostSolver):
         """
         
         host_instance_tuples_list = []
-        #Implement the solver logic here
+        
         if instance_uuids:
             num_instances = len(instance_uuids)
         else:
             num_instances = request_spec.get('num_instances', 1)
             #Setting a unset uuid string for each instance
             instance_uuids = ['unset_uuid'+str(i) for i in xrange(num_instances)]
-        
         num_hosts = len(hosts)
         
-        #A list of HostsIds
+        # Print a list of hosts and their states
         LOG.debug(_("All Hosts: %s") % [h.host for h in hosts])
-        
         for host in hosts:
             LOG.debug(_("Host state: %s") % host)
         
+        # Create the linear solver.
         solver = pywraplp.Solver('Scheduler', pywraplp.Solver.CBC_MIXED_INTEGER_PROGRAMMING)
         
-        # adjacency matrix specifying whether an instance is assigned to a host (variables to be solved)
+        # Create the 'variables' matrix to contain the referenced variables.
         variables = [[solver.IntVar(0, 1, 'variables[%i,%i]' % (i, j)) for j in range(num_instances)] for i in range(num_hosts)]
         
-        # create cost and constraint instances from their classes
+        # Get costs and constraints and formulate the linear problem.
         self.cost_objects = [cost() for cost in self.cost_classes]
         self.constraint_objects = [constraint(variables,hosts,instance_uuids,request_spec,filter_properties) for constraint in self.constraint_classes]
         
-        #costs = [  # Instances
-        #          # 1 2 3 4 5
-        #          [2, 4, 5, 2, 1],  # A   Hosts
-        #          [3, 1, 3, 2, 3]  # B
-        #          ]
-        
-        #Creates a list of costs of each Host-Instance assignment
         costs = [[0 for j in range(num_instances)] for i in range(num_hosts)]
-        
         for costObject in self.cost_objects:
             cost = costObject.get_cost_matrix(hosts, instance_uuids, request_spec, filter_properties)
             cost = costObject.normalize_cost_matrix(cost,0.0,1.0)
@@ -116,11 +116,8 @@ class HostsOrtoolsLinearSolver(novasolvers.BaseHostSolver):
             LOG.debug(_('The cost matrix is {}'.format(cost)))
             LOG.debug(_('Weight equals {}'.format(weight)))
             costs = [[costs[i][j] + weight * cost[i][j] for j in range(num_instances)] for i in range(num_hosts)]
-        
-        # objective function
         objfunc = solver.Sum([costs[i][j]*variables[i][j] for i in range(num_hosts) for j in range(num_instances)])
         
-        # get linear constraints
         for constraintObject in self.constraint_objects:
             coefficient_matrix = constraintObject.get_coefficient_matrix(variables,hosts,instance_uuids,request_spec,filter_properties)
             variable_matrix = constraintObject.get_variable_matrix(variables,hosts,instance_uuids,request_spec,filter_properties)
@@ -130,10 +127,11 @@ class HostsOrtoolsLinearSolver(novasolvers.BaseHostSolver):
                 len_vector = len(variable_matrix[i])
                 solver.Add(operation(solver.Sum([coefficient_matrix[i][j] * variable_matrix[i][j] for j in range(len_vector)])))
         
+        # Solve the linear problem.
         objective = solver.Minimize(objfunc)
-        
         solver.Solve()
         
+        # create host-instance tuples from the solutions.
         for i in range(num_hosts):
             for j in range(num_instances):
                 if int(variables[i][j].SolutionValue()) == 1:

@@ -37,6 +37,7 @@ disk_allocation_ratio_opt = cfg.FloatOpt("disk_allocation_ratio",
 CONF.register_opt(disk_allocation_ratio_opt)
 
 class ResourceAllocationConstraint(linearconstraints.BaseLinearConstraint):
+    """Base class of resource allocation constraints."""
     def __init__(self, variables, hosts, instance_uuids, request_spec, filter_properties):
         [self.num_hosts, self.num_instances] = self._get_host_instance_nums(hosts,instance_uuids,request_spec)
     def _get_host_instance_nums(self,hosts,instance_uuids,request_spec):
@@ -58,20 +59,20 @@ class MaxDiskAllocationPerHostConstraint(ResourceAllocationConstraint):
     # thus the right-hand-side is 0.
     
     def get_coefficient_matrix(self,variables,hosts,instance_uuids,request_spec,filter_properties):
-        """Giving demand as coefficient and supply as constant."""
+        # Give demand as coefficient for each variable and -supply as constant in each constraint.
         demand = [self._get_required_disk_mb(filter_properties) for j in range(self.num_instances)]
         supply = [self._get_usable_disk_mb(hosts[i]) for i in range(self.num_hosts)]
         coefficient_matrix = [demand + [-supply[i]] for i in range(self.num_hosts)]
         return coefficient_matrix
     
     def get_variable_matrix(self,variables,hosts,instance_uuids,request_spec,filter_properties):
-        """Organize the variables so that rows correspond to hosts, and columns correspond to instances."""
+        # The variable_matrix[i,j] denotes the relationship between host[i] and instance[j].
         variable_matrix = []
         variable_matrix = [[variables[i][j] for j in range(self.num_instances)] + [1] for i in range(self.num_hosts)]
         return variable_matrix
     
     def get_operations(self,variables,hosts,instance_uuids,request_spec,filter_properties):
-        """Giving operations as 'less than'."""
+        # Operations are '<='.
         operations = [(lambda x: x<=0) for i in range(self.num_hosts)]
         return operations
     
@@ -107,7 +108,7 @@ class MaxRamAllocationPerHostConstraint(ResourceAllocationConstraint):
     # thus the right-hand-side is 0.
     
     def get_coefficient_matrix(self,variables,hosts,instance_uuids,request_spec,filter_properties):
-        """Giving demand as coefficient and supply as constant."""
+        # Give demand as coefficient for each variable and -supply as constant in each constraint.
         [num_hosts,num_instances] = self._get_host_instance_nums(hosts,instance_uuids,request_spec)
         demand = [self._get_required_memory_mb(filter_properties) for j in range(self.num_instances)]
         supply = [self._get_usable_memory_mb(hosts[i]) for i in range(self.num_hosts)]
@@ -115,13 +116,13 @@ class MaxRamAllocationPerHostConstraint(ResourceAllocationConstraint):
         return coefficient_matrix
     
     def get_variable_matrix(self,variables,hosts,instance_uuids,request_spec,filter_properties):
-        """Organize the variables so that rows correspond to hosts, and columns correspond to instances."""
+        # The variable_matrix[i,j] denotes the relationship between host[i] and instance[j].
         variable_matrix = []
         variable_matrix = [[variables[i][j] for j in range(self.num_instances)] + [1] for i in range(self.num_hosts)]
         return variable_matrix
     
     def get_operations(self,variables,hosts,instance_uuids,request_spec,filter_properties):
-        """Giving operations as 'less than'."""
+        # Operations are '<='.
         operations = [(lambda x: x<=0) for i in range(self.num_hosts)]
         return operations
     
@@ -157,7 +158,7 @@ class MaxVcpuAllocationPerHostConstraint(ResourceAllocationConstraint):
     # thus the right-hand-side is 0.
     
     def get_coefficient_matrix(self,variables,hosts,instance_uuids,request_spec,filter_properties):
-        """Giving demand as coefficient and supply as constant."""
+        # Give demand as coefficient for each variable and -supply as constant in each constraint.
         [num_hosts,num_instances] = self._get_host_instance_nums(hosts,instance_uuids,request_spec)
         demand = [self._get_required_vcpus(filter_properties) for j in range(self.num_instances)]
         supply = [self._get_usable_vcpus(hosts[i]) for i in range(self.num_hosts)]
@@ -165,13 +166,13 @@ class MaxVcpuAllocationPerHostConstraint(ResourceAllocationConstraint):
         return coefficient_matrix
     
     def get_variable_matrix(self,variables,hosts,instance_uuids,request_spec,filter_properties):
-        """Organize the variables so that rows correspond to hosts, and columns correspond to instances."""
+        # The variable_matrix[i,j] denotes the relationship between host[i] and instance[j].
         variable_matrix = []
         variable_matrix = [[variables[i][j] for j in range(self.num_instances)] + [1] for i in range(self.num_hosts)]
         return variable_matrix
     
     def get_operations(self,variables,hosts,instance_uuids,request_spec,filter_properties):
-        """Giving operations as 'less than'."""
+        # Operations are '<='.
         operations = [(lambda x: x<=0) for i in range(self.num_hosts)]
         return operations
     

@@ -37,7 +37,7 @@ class AffinityConstraint(linearconstraints.BaseLinearConstraint):
         return [num_hosts,num_instances]
     
 class DifferentHostConstraint(AffinityConstraint):
-    '''Force to select host which is different from a set of given instances'.'''
+    """Force to select hosts which are different from a set of given instances."""
     
     # The linear constraint should be formed as:
     # coeff_matrix * var_matrix' (operator) constant_vector
@@ -46,7 +46,7 @@ class DifferentHostConstraint(AffinityConstraint):
     # thus the right-hand-side is always 0.
     
     def get_coefficient_matrix(self,variables,hosts,instance_uuids,request_spec,filter_properties):
-        """Giving demand as coefficient and supply as constant."""
+        # Coefficients are 1 for same hosts and 0 for different hosts.
         context = filter_properties['context']
         scheduler_hints = filter_properties.get('scheduler_hints', {})
         affinity_uuids = scheduler_hints.get('different_host', [])
@@ -60,7 +60,6 @@ class DifferentHostConstraint(AffinityConstraint):
                         'uuid':affinity_uuids,
                         'deleted':False}):
                     coefficient_matrix.append([1 for j in range(self.num_instances)])
-                    LOG.debug(_('found.'))
                 else:
                     coefficient_matrix.append([0 for j in range(self.num_instances)])
             else:
@@ -68,18 +67,18 @@ class DifferentHostConstraint(AffinityConstraint):
         return coefficient_matrix
     
     def get_variable_matrix(self,variables,hosts,instance_uuids,request_spec,filter_properties):
-        """Organize the variables so that rows correspond to hosts, and columns correspond to instances."""
+        # The variable_matrix[i,j] denotes the relationship between host[i] and instance[j].
         variable_matrix = []
         variable_matrix = [[variables[i][j] for j in range(self.num_instances)] for i in range(self.num_hosts)]
         return variable_matrix
     
     def get_operations(self,variables,hosts,instance_uuids,request_spec,filter_properties):
-        """Giving operations as 'less than'."""
+        # Operations are '=='.
         operations = [(lambda x: x==0) for i in range(self.num_hosts)]
         return operations
     
 class SameHostConstraint(AffinityConstraint):
-    '''Force to select host which is different from a set of given instances'.'''
+    """Force to select hosts which are same as a set of given instances'."""
     
     # The linear constraint should be formed as:
     # coeff_matrix * var_matrix' (operator) constant_vector
@@ -88,7 +87,7 @@ class SameHostConstraint(AffinityConstraint):
     # thus the right-hand-side is always 0.
     
     def get_coefficient_matrix(self,variables,hosts,instance_uuids,request_spec,filter_properties):
-        """Giving demand as coefficient and supply as constant."""
+        # Coefficients are 0 for same hosts and 1 for different hosts.
         context = filter_properties['context']
         scheduler_hints = filter_properties.get('scheduler_hints', {})
         affinity_uuids = scheduler_hints.get('same_host', [])
@@ -102,20 +101,19 @@ class SameHostConstraint(AffinityConstraint):
                         'uuid':affinity_uuids,
                         'deleted':False}):
                     coefficient_matrix.append([0 for j in range(self.num_instances)])
-                    LOG.debug(_('found.'))
                 else:
                     coefficient_matrix.append([1 for j in range(self.num_instances)])
             else: coefficient_matrix.append([0 for j in range(self.num_instances)])
         return coefficient_matrix
     
     def get_variable_matrix(self,variables,hosts,instance_uuids,request_spec,filter_properties):
-        """Organize the variables so that rows correspond to hosts, and columns correspond to instances."""
+        # The variable_matrix[i,j] denotes the relationship between host[i] and instance[j].
         variable_matrix = []
         variable_matrix = [[variables[i][j] for j in range(self.num_instances)] for i in range(self.num_hosts)]
         return variable_matrix
     
     def get_operations(self,variables,hosts,instance_uuids,request_spec,filter_properties):
-        """Giving operations as 'less than'."""
+        # Operations are '=='.
         operations = [(lambda x: x==0) for i in range(self.num_hosts)]
         return operations
     

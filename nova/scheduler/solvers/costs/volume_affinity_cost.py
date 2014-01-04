@@ -25,15 +25,9 @@ from nova.scheduler.solvers import costs as solvercosts
 LOG = logging.getLogger(__name__)
 
 class VolumeAffinityCost(solvercosts.BaseCost):
-    """Evaluation of the distance between computing and volume hosts.
-    Since the only volume info available now is volume Id, the cost 
-    is just 0 or 1.
-    """
+    """The cost is 0 for same-as-volume host and 1 otherwise."""
     
     hint_name = 'same_host_volume_id'
-    
-    def get_cost_name(self):
-        return 'VolumeAffinityCost'
     
     def get_cost_matrix(self,hosts,instance_uuids,request_spec,filter_properties):
         num_hosts = len(hosts)

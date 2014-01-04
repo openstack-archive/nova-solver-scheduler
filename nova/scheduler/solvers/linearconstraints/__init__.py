@@ -22,6 +22,11 @@ from nova import loadables
 
 class BaseLinearConstraint(object):
     """Base class for linear constraint"""
+    # The linear constraint should be formed as:
+    # coeff_matrix * var_matrix' (operator) (constants)
+    # where (operator) is ==, >, >=, <, <=, !=, etc.
+    # For convenience, the (constants) is merged into left-hand-side,
+    # thus the right-hand-side is 0.
     def __init__(self, variables, hosts, instance_uuids, request_spec, filter_properties):
         pass
     def get_coefficient_matrix(self,variables,hosts,instance_uuids,request_spec,filter_properties):

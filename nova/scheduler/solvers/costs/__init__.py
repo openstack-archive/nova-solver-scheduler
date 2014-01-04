@@ -14,14 +14,14 @@
 #    under the License.
 
 """
-Costs information for scheduler constraint solvers
+Costs for scheduler constraint solvers
 """
 
 from nova import filters
 from nova import loadables
 
 class BaseCost(object):
-    """Base class for cost"""
+    """Base class for cost."""
     def get_cost_matrix(self,hosts,instance_uuids,request_spec,filter_properties):
         """Return the cost matrix. Implement this in a subclass."""
         raise NotImplementedError()

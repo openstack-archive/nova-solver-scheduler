@@ -34,6 +34,12 @@ CONF.register_opt(ram_allocation_ratio_opt)
 class MaxInstancesPerHostConstraint(linearconstraints.BaseLinearConstraint):
     """Constraint that specifies the maximum number of instances that each host can launch."""
     
+    # The linear constraint should be formed as:
+    # coeff_matrix * var_matrix' (operator) (constants)
+    # where (operator) is ==, >, >=, <, <=, !=, etc.
+    # For convenience, the (constants) is merged into left-hand-side,
+    # thus the right-hand-side is 0.
+    
     hint_name = 'max_instances_per_host'
     
     def __init__(self, variables, hosts, instance_uuids, request_spec, filter_properties):
@@ -47,27 +53,21 @@ class MaxInstancesPerHostConstraint(linearconstraints.BaseLinearConstraint):
             num_instances = request_spec.get('num_instances', 1)
         return [num_hosts,num_instances]
     
-    # The linear constraint should be formed as:
-    # coeff_matrix * var_matrix' (operator) (constants)
-    # where (operator) is ==, >, >=, <, <=, !=, etc.
-    # For convenience, the (constants) is merged into left-hand-side,
-    # thus the right-hand-side is 0.
-    
     def get_coefficient_matrix(self,variables,hosts,instance_uuids,request_spec,filter_properties):
-        """Giving 1 as coefficient and -(num_hosts_per_instance) as constant."""
+        # The coefficient for each variable is 1 and constant in each constraint is -(max_instances_per_host)
         scheduler_hints = filter_properties.get('scheduler_hints')
         max_instances_per_host = scheduler_hints.get(self.hint_name, 1)
         coefficient_matrix = [[1 for j in range(self.num_instances)] + [-max_instances_per_host] for i in range(self.num_hosts)]
         return coefficient_matrix
     
     def get_variable_matrix(self,variables,hosts,instance_uuids,request_spec,filter_properties):
-        """rearrange variables."""
+        # The variable_matrix[i,j] denotes the relationship between host[i] and instance[j].
         variable_matrix = []
         variable_matrix = [[variables[i][j] for j in range(self.num_instances)] + [1] for i in range(self.num_hosts)]
         return variable_matrix
     
     def get_operations(self,variables,hosts,instance_uuids,request_spec,filter_properties):
-        """Giving operations as 'less than'."""
+        # Operations are '<='.
         operations = [(lambda x: x<=0) for i in range(self.num_hosts)]
         return operations
     
