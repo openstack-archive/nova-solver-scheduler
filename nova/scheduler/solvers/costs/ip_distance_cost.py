@@ -30,7 +30,7 @@ class IpDistanceCost(solvercosts.BaseCost):
     using IP addresses.
     """
     
-    hint_name = 'ip_distance_cost_volume_id'
+    hint_name = 'ip_distance_cost_volume_id_list'
     
     def get_cost_matrix(self,hosts,instance_uuids,request_spec,filter_properties):
         num_hosts = len(hosts)
@@ -41,30 +41,39 @@ class IpDistanceCost(solvercosts.BaseCost):
         
         context = filter_properties.get('context')
         scheduler_hints = filter_properties.get('scheduler_hints')
-        volume_id = scheduler_hints.get(self.hint_name, False)
+        hint_content = scheduler_hints.get(self.hint_name, None)
+        if isinstance(hint_content,basestring):
+            volume_id_list = hint_content.split(',')
+        else:
+            volume_id_list = hint_content
         
         cost_matrix = [[0.0 for j in range(num_instances)] for i in range(num_hosts)]
         
-        volume_host = None
-        if volume_id is not None:
-            try:
-                volume = cinder.cinderclient(context).volumes.get(volume_id)
-                volume_host = getattr(volume, 'os-vol-host-attr:host', None)
-                volume_host_ip = self._get_ip(context,volume_host)
-                LOG.debug(_('Volume host is: %s') %volume_host)
-                LOG.debug(_('Host ip of volume is: %s') %volume_host_ip)
-            except client_exceptions.NotFound:
-                LOG.warning('volume with provided id ("%s") was not found', volume_id)
-        
-        if volume_host is not None:
+        volume_ip_list = []
+        if volume_id_list:
+            for volume_id in volume_id_list:
+                try:
+                    volume = cinder.cinderclient(context).volumes.get(volume_id)
+                    volume_host = getattr(volume, 'os-vol-host-attr:host', None)
+                    volume_host_ip = self._get_ip(context,volume_host)
+                    if volume_host_ip:
+                        volume_ip_list.append(volume_host_ip)
+                    LOG.debug(_('Host ip of volume is: %s') %volume_host_ip)
+                except client_exceptions.NotFound:
+                    LOG.warning('volume with provided id ("%s") was not found', volume_id)
             for i in range(num_hosts):
                 host_state = hosts[i]
-                host_ip = host_state.host_ip
-                distance = self._get_ip_distance(host_ip,volume_host_ip)
-                cost_matrix[i] = [distance for j in range(num_instances)]
-                LOG.debug(_('Ips: %s %s' %(host_ip,volume_host_ip)))
-                LOG.debug(_('Distance between %(host1)s and %(host2)s equals: %(distanceVal)d'), \
-                        {'host1':host_state.host,'host2':volume_host,'distanceVal':distance})
+                instance_host_ip = host_state.host_ip
+                distance_sum = 0.0
+                distance_prod = 1.0
+                for volume_host_ip in volume_ip_list:
+                    distance = self._get_ip_distance(instance_host_ip,volume_host_ip)
+                    distance_sum += distance
+                    distance_prod *= distance
+                    LOG.debug(_('Ips: %s %s' %(instance_host_ip,volume_host_ip)))
+                    LOG.debug(_('Distance cost between instance and volume equals: %(distanceVal)d'), \
+                            {'distanceVal':distance_sum + distance_prod})
+                cost_matrix[i] = [distance_sum + distance_prod for j in range(num_instances)]
         
         return cost_matrix
     
