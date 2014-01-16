@@ -21,16 +21,6 @@ from nova.scheduler.solvers import linearconstraints
 
 LOG = logging.getLogger(__name__)
 
-ram_allocation_ratio_opt = cfg.FloatOpt('ram_allocation_ratio',
-        default=1.5,
-        help='Virtual ram to physical ram allocation ratio which affects '
-             'all ram filters. This configuration specifies a global ratio '
-             'for RamFilter. For AggregateRamFilter, it will fall back to '
-             'this configuration value if no per-aggregate setting found.')
-CONF = cfg.CONF
-CONF.register_opt(ram_allocation_ratio_opt)
-
-
 class NumHostsPerInstanceConstraint(linearconstraints.BaseLinearConstraint):
     """Constraint that specifies the number of hosts each instance is assigned to."""
     

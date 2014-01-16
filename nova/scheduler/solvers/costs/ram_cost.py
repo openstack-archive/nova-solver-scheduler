@@ -27,7 +27,7 @@ LOG = logging.getLogger(__name__)
 
 ram_weight_opts = [
         cfg.FloatOpt('ram_cost_optimization_multiplier',
-                     default=1.0,
+                     default=-1.0,
                      help='Multiplier used for ram optimization cost metric. This '
                           'solver uses a LP minimization problem. So a negative '
                           'number would mean a cost maximization problem.'),

@@ -24,16 +24,13 @@ LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 
 ram_allocation_ratio_opt = cfg.FloatOpt('ram_allocation_ratio',
-        default=1.5,
-        help='Virtual ram to physical ram allocation ratio which affects '
-             'all ram filters. This configuration specifies a global ratio '
-             'for RamFilter. For AggregateRamFilter, it will fall back to '
-             'this configuration value if no per-aggregate setting found.')
+        default=1.0,
+        help='Virtual ram to physical ram allocation ratio.')
 CONF.register_opt(ram_allocation_ratio_opt)
 
 disk_allocation_ratio_opt = cfg.FloatOpt("disk_allocation_ratio",
         default=1.0,
-        help="virtual disk to physical disk allocation ratio")
+        help="Virtual disk to physical disk allocation ratio.")
 CONF.register_opt(disk_allocation_ratio_opt)
 
 class ResourceAllocationConstraint(linearconstraints.BaseLinearConstraint):
