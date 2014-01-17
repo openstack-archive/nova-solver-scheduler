@@ -23,12 +23,12 @@ from nova.scheduler.solvers import linearconstraints
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 
-ram_allocation_ratio_opt = cfg.FloatOpt('ram_allocation_ratio',
+ram_allocation_ratio_opt = cfg.FloatOpt('linearconstraint_ram_allocation_ratio',
         default=1.0,
         help='Virtual ram to physical ram allocation ratio.')
 CONF.register_opt(ram_allocation_ratio_opt)
 
-disk_allocation_ratio_opt = cfg.FloatOpt("disk_allocation_ratio",
+disk_allocation_ratio_opt = cfg.FloatOpt("linearconstraint_disk_allocation_ratio",
         default=1.0,
         help="Virtual disk to physical disk allocation ratio.")
 CONF.register_opt(disk_allocation_ratio_opt)
@@ -79,7 +79,7 @@ class MaxDiskAllocationPerHostConstraint(ResourceAllocationConstraint):
         """
         free_disk_mb = host_state.free_disk_mb
         total_usable_disk_mb = host_state.total_usable_disk_gb * 1024
-        disk_mb_limit = total_usable_disk_mb * CONF.disk_allocation_ratio
+        disk_mb_limit = total_usable_disk_mb * CONF.linearconstraint_disk_allocation_ratio
         used_disk_mb = total_usable_disk_mb - free_disk_mb
         usable_disk_mb = disk_mb_limit - used_disk_mb
         return usable_disk_mb
@@ -129,7 +129,7 @@ class MaxRamAllocationPerHostConstraint(ResourceAllocationConstraint):
         """
         free_ram_mb = host_state.free_ram_mb
         total_usable_ram_mb = host_state.total_usable_ram_mb
-        ram_allocation_ratio = CONF.ram_allocation_ratio
+        ram_allocation_ratio = CONF.linearconstraint_ram_allocation_ratio
         memory_mb_limit = total_usable_ram_mb * ram_allocation_ratio
         used_ram_mb = total_usable_ram_mb - free_ram_mb
         usable_ram_mb = memory_mb_limit - used_ram_mb
