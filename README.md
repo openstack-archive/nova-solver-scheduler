@@ -4,70 +4,146 @@ Openstack Nova Solver Scheduler
 Solver Scheduler is an Openstack Nova Scheduler driver that provides a smarter, complex constraints optimization based resource scheduling in Nova.  It is a pluggable scheduler driver, that can leverage existing complex constraint solvers available in open source such as PULP, CVXOPT, Google OR-TOOLS, etc. It can be easily extended to add complex constraint models for various use cases, written using any of the available open source constraint solving frameworks. 
 
 Getting Started
-===============
+---------------
 The project code has to be patched onto an existing installation of Openstack Nova, as it is a pluggable Nova scheduler driver.
 
 Key modules
-===========
-* nova/scheduler/solver_scheduler.py    -  The new scheduler driver module
-* nova/scheduler/host_manager.py   - A patched version of host_manager module from the master Nova project, with a new method.
+-----------
 
-The code includes a reference implementation of a solver that models the scheduling problem as a Linear Programming model, written using the PULP LP modeling language. It uses a PULP_CBC_CMD, which is a packaged constraint solver, included in the coinor-pulp python package.  
+* The new scheduler driver module:
 
-*  nova/scheduler/solvers/hosts_pulp_solver.py
+    nova/scheduler/solver_scheduler.py
 
-There are two examples of pluggable solvers using coinor-pulp or or-tools package, where costs functions and linear constraints can be plugged into the solver.
+* A patched version of host_manager module from the master Nova project, with a new method:
 
-*  nova/scheduler/solvers/hosts_pulp_solver_v2.py
-*  nova/scheduler/solvers/hosts_ortools_linear_solver.py
+    nova/scheduler/host_manager.py
+
+* The code includes a reference implementation of a solver that models the scheduling problem as a Linear Programming model, written using the PULP LP modeling language. It uses a PULP_CBC_CMD, which is a packaged constraint solver, included in the coinor-pulp python package.
+
+    nova/scheduler/solvers/hosts_pulp_solver.py
+
+* There are two examples of pluggable solvers using coinor-pulp or or-tools package, where costs functions and linear constraints can be plugged into the solver.
+
+    nova/scheduler/solvers/hosts_pulp_solver_v2.py  
+    nova/scheduler/solvers/hosts_ortools_linear_solver.py
 
 Additional modules
-==================
+------------------
 
-The cost functions pluggable to solver:
+* The cost functions pluggable to solver:
 
-* nova/scheduler/solvers/costs/ram_cost.py      - Cost function that can help to balance (or stack) ram usage of all hosts
-    - Note: requires scheduler hint: ram_cost_optimization_multiplier=\<the multiplier number\>
-* nova/scheduler/solvers/costs/ip_distance_cost.py      - Cost function that evaluates the distance between a colume and a vm using ip address
-    - Note: requires scheuler hint: ip_distance_cost_volume_id_list=\<a list of volume ids\>
+    nova/scheduler/solvers/costs/ram_cost.py  
+    nova/scheduler/solvers/costs/ip_distance_cost.py  
 
-The linear constraints that are pluggable to solver:
+* The linear constraints that are pluggable to solver:
 
-* nova/scheduler/solvers/linearconstraints/affinity_constraint.py       - Constraint that forces instances to be placed away from a set of instances, or at the same host as a set of instances
-    - Note: requires scheduler hint: different_host=\<list of instance uuids\> or same_host=\<list of instance uuids\>
-* nova/scheduler/solvers/linearconstraints/num_hosts_per_instance_constraint.py     - Constraint that forces each instance to be placed in exactly certain number (normally 1) of hosts, this is necessary for getting correct solution from solver
-* nova/scheduler/solvers/linearconstraints/resource_allocation_constraint.py        - Constraints that ensure host resources (ram, disk, vcpu, etc.) not to be over allocated
+    nova/scheduler/solvers/linearconstraints/active_host_constraint.py  
+    nova/scheduler/solvers/linearconstraints/affinity_constraint.py  
+    nova/scheduler/solvers/linearconstraints/num_hosts_per_instance_constraint.py  
+    nova/scheduler/solvers/linearconstraints/max_instances_per_host_constraint.py  
+    nova/scheduler/solvers/linearconstraints/resource_allocation_constraint.py  
 
+Requirements
+------------
 
-Requirements:
-=============
 * coinor-pulp>=1.0.4
-* or-tools>=1.0.2902
-  
-Configurations:
-==============
+* or-tools>=1.0.2902 (Alternative. There is a known issue with or-tools package. See below.)
 
-The following additional configuration options have to be added to nova.conf file:
+Known Issues
+------------
 
-* This is for changing the scheduler driver used by Nova.
+* In some cases, the installation of or-tools package may cause unexpected crash of multiple OpenStack services due to a dependency problem. There has not been report of this issue for usage in Devstack environment.
 
+Configurations
+--------------
+
+* This is a configuration sample for the solver-scheduler. Please add these options to nova.conf.
+* Note:
+    - Instead of being added, the following existing options should be updated with new values: scheduler_driver
+    - The module 'nova.scheduler.solvers.hosts_pulp_solver' is self-inclusive and non-pluggable for costs and constraints. Therefore, if the option 'scheduler_host_solver' is set to use this module, there is no need for additional costs/constraints configurations.
+    - Please refer to the 'Configuration Details' section below for proper configuration of costs and constraints.
+
+```
+#
+# Solver Scheduler Options
+#
+
+# Default driver to use for the scheduler
 scheduler_driver = nova.scheduler.solver_scheduler.ConstraintSolverScheduler
 
-* This is for changing the solver module to be used by the above solver scheduler. If you implement your own constraints modules with constraints for your use cases, update this option.
+# Default solver to use for the solver scheduler
+scheduler_host_solver = nova.scheduler.solvers.hosts_pulp_solver_v2.HostsPulpSolver
 
-scheduler_host_solver = nova.scheduler.solvers.hosts_pulp_solver.HostsPulpSolver
-
-
-The following configuration options need to be added to nova.conf if using these solvers: hosts_pulp_solver_v2.py, hosts_ortools_linear_solver.py
-
-* This is for setting the cost functions that are used in the solver
-
+# Cost functions to use in the linear solver
 scheduler_solver_costs = RamCost, IpDistanceCost
 
-* This is for setting the weight of each cost
+# Weight of each cost (every cost function used should be given a weight.)
+scheduler_solver_cost_weights = RamCost:0.25, IpDistanceCost:0.75
 
-scheduler_solver_cost_weights = RamCost:0.7, IpDistanceCost:0.2
-
-* This is for setting the constraints used in the solver
-
+# Constraints used in the solver
 scheduler_solver_constraints = NumHostsPerInstanceConstraint, MaxDiskAllocationPerHostConstraint, MaxRamAllocationPerHostConstraint
+
+# Way of ram usage
+# set negative for balancing
+# set positive for stacking
+ram_cost_optimization_multiplier = -1
+
+# Virtual-to-physical disk allocation ratio
+linearconstraint_disk_allocation_ratio = 1.0
+
+# Virtual-to-physical ram allocation ratio
+linearconstraint_ram_allocation_ratio = 1.0
+```
+
+Configuration Details
+---------------------
+
+* Available costs  
+
+    - **RamCost**  
+        Help to balance (or stack) ram usage of hosts.  
+        The following option should be set in configuration when using this cost:  
+        ```ram_cost_optimization_multiplier = <a real number>```  
+        Set the multiplier to negative number for balanced ram usage,  
+        set the multiplier to positive number for stacked ram usage.  
+    
+    - **IpDistanceCost**  
+        Help to place instances close to a set of volumes.  
+        The distance between instances and volumes are evaluated by using ip address.  
+        The following scheuler hint is expected when using this cost:  
+        ```ip_distance_cost_volume_id_list = <a list of volume ids>```  
+
+* Available linear constraints  
+
+    - **ActiveHostConstraint**  
+        Only enabled and operational hosts are allowed in solution.  
+        Normally this constraint should always be enabled.  
+    
+    - **AffinityConstraint**  
+        Force instances to be placed at either different or same hosts as a given set of instances.  
+        The following scheduler hint is expected when using this constraint:  
+        ```different_host = <a list of instance uuids>``` or ```same_host= <a list of instance uuids>```  
+    
+    - **NumHostsPerInstanceConstraint**  
+        The purpose of this constraint is to avoid trivial solution (i.e. instances placed nowhere).  
+        Normally this constraint should always be enabled.  
+    
+    - **MaxInstancesPerHostConstraint**  
+        Specify the maximum number of instances placed in each host in each scheduling process.  
+        The following scheduler hint is expected when using this constraint:  
+        ```max_instances_per_host = <a positive integer>```  
+        By default, max_instances_per_host = 1, resulting in an anti-affinity placement solution.  
+    
+    - **MaxDiskAllocationPerHostConstraint**  
+        Cap the virtual disk allocation of hosts.  
+        The following option should be set in configuration when using this constraint:  
+        ```linearconstraint_disk_allocation_ratio = <a positive real number>``` (virtual-to-physical disk allocation ratio, if >1.0 then over-allocation is allowed.)  
+    
+    - **MaxRamAllocationPerHostConstraint**  
+        Cap the virtual ram allocation of hosts.  
+        The following option should be set in configuration when using this constraint:  
+        ```linearconstraint_ram_allocation_ratio = <a positive real number>``` (virtual-to-physical ram allocation ratio, if >1.0 then over-allocation is allowed.)  
+    
+    - **MaxVcpuAllocationPerHostConstraint**  
+        Cap the vcpu allocation of hosts.  
+    
