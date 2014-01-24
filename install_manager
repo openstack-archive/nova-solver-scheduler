@@ -8,7 +8,7 @@ fi
 
 cd /tmp
 
-curl https://raw.github.com/CiscoSystems/nova-solver-scheduler/882f9880da736a1d3de526b6df121ba3cf592052/solver-scheduler > solver-scheduler
+curl https://raw.github.com/CiscoSystems/nova-solver-scheduler/stable/0.1/solver-scheduler > solver-scheduler
 
 cp solver-scheduler /bin/.
 
