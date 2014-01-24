@@ -57,10 +57,13 @@ Known Issues
 Solver Scheduler Manager
 ------------
 
-The Solver Scheduler Manger will allow you to manage the solver scheduler in you openstack installation.
+The Solver Scheduler Manger will allow you to manage the solver scheduler in your openstack installation.
 
-**Note:**  
-    This is an alpha version, which was tested on **Ubuntu 12.04** and **OpenStack Havana** only.
+* **Note:**  
+    - This is an **alpha** version, which was tested on **Ubuntu 12.04** and **OpenStack Havana** only.
+    - It is recommended that a backup of the following files be kept before using this manager:  
+        /etc/nova/nova.conf  
+        nova/scheduler/host_manager.py  
 
 To install the manager, run:  
 ```curl https://raw.github.com/CiscoSystems/nova-solver-scheduler/master/install_manager | sudo bash```
@@ -68,7 +71,6 @@ To install the manager, run:
 Then use the following commands as root:  
 ```
 solver-scheduler install
-solver-scheduler remove
 solver-scheduler activate
 solver-scheduler deactivate
 solver-scheduler remove
