@@ -388,22 +388,22 @@ cmd_name="${1}"
 
 case "${cmd_name}" in
     install)
-        install
+        install $*
         ;;
     remove)
-        remove
+        remove $*
         ;;
     update)
-        update
+        update $*
         ;;
     restart)
-        restart
+        restart $*
         ;;
     activate)
-        activate
+        activate $*
         ;;
     deactivate)
-        deactivate
+        deactivate $*
         ;;
     install-extra)
         _error "This feature is not yet available."
