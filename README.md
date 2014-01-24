@@ -54,6 +54,28 @@ Known Issues
 
 * In some cases, the installation of or-tools package may cause unexpected crash of multiple OpenStack services due to a dependency problem. There has not been report of this issue for usage in Devstack environment.
 
+Solver Scheduler Manager
+------------
+
+The Solver Scheduler Manger will allow you to manage the solver scheduler in you openstack installation.
+
+**Note:**  
+    This is an alpha version, which was tested on **Ubuntu 12.04** and **OpenStack Havana** only.
+
+To install the manager, run:  
+```curl https://raw.github.com/CiscoSystems/nova-solver-scheduler/master/install_manager | sudo bash```
+
+Then use the following commands as root:  
+```
+solver-scheduler install
+solver-scheduler remove
+solver-scheduler activate
+solver-scheduler deactivate
+solver-scheduler remove
+solver-scheduler update
+solver-scheduler help
+```
+
 Configurations
 --------------
 
