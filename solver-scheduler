@@ -125,12 +125,22 @@ _instructions() {
 
 perform_initial_bckups() {
 
+
     _info "Operation: Installing..."
-    cp ${_NOVA_SCHEDULER_PATH}/host_manager.py ${_NOVA_SCHEDULER_PATH}/host_manager.py.original.bckup
+    if [ ! -f ${_NOVA_SCHEDULER_PATH}/host_manager.py.original.bckup ]; then
+        cp ${_NOVA_SCHEDULER_PATH}/host_manager.py ${_NOVA_SCHEDULER_PATH}/host_manager.py.original.bckup
+    else
+        cp ${_NOVA_SCHEDULER_PATH}/host_manager.py ${_NOVA_SCHEDULER_PATH}/host_manager.py.original.bckup.$(date +%s)
+    fi
     if [ "$?" -ne "0" ]; then
       _error "Error creating a backup of ${_NOVA_SCHEDULER_PATH}/host_manager.py."
     fi
-    cp ${_NOVA_CONF_PATH}/nova.conf ${_NOVA_CONF_PATH}/nova.conf.original.bckup
+
+    if [ ! -f ${_NOVA_CONF_PATH}/nova.conf.original.bckup ]; then
+        cp ${_NOVA_CONF_PATH}/nova.conf ${_NOVA_CONF_PATH}/nova.conf.original.bckup
+    else
+        cp ${_NOVA_CONF_PATH}/nova.conf ${_NOVA_CONF_PATH}/nova.conf.original.bckup$(date +%s)
+    fi
     if [ "$?" -ne "0" ]; then
       _error "Error creating a backup of ${_NOVA_CONF_PATH}/nova.conf."
     fi
@@ -197,7 +207,7 @@ install() {
     _info "Operation: Downloading Cisco's Solver scheduler..."
     cd /tmp
 
-    git clone -b stable/0.1 https://github.com/CiscoSystems/nova-solver-scheduler.git
+    git clone https://github.com/CiscoSystems/nova-solver-scheduler.git
     if [ "$?" -ne "0" ]; then
       _error "Error downloading Cisco's Solver scheduler."
     fi
