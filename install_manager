@@ -1,0 +1,19 @@
+#!/bin/bash
+
+if [[ ${EUID} -ne 0 ]]; then
+    echo "This script needs to be run as root"
+    exit 1
+fi
+
+
+cd /tmp
+
+curl https://raw.github.com/CiscoSystems/nova-solver-scheduler/882f9880da736a1d3de526b6df121ba3cf592052/solver-scheduler > solver-scheduler
+
+cp solver-scheduler /bin/.
+
+chmod +x /bin/solver-scheduler
+
+rm solver-scheduler
+
+echo "Installed. Please use 'solver-scheduler help' as root for a list of available commands."
