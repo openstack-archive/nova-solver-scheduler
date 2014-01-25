@@ -46,7 +46,7 @@ Additional modules
 Requirements
 ------------
 
-* coinor-pulp>=1.0.4
+* coinor.pulp>=1.0.4
 * or-tools>=1.0.2902 (Alternative. There is a known issue with or-tools package. See below.)
 
 Known Issues
@@ -54,8 +54,8 @@ Known Issues
 
 * In some cases, the installation of or-tools package may cause unexpected crash of multiple OpenStack services due to a dependency problem. There has not been report of this issue for usage in Devstack environment.
 
-Solver Scheduler Manager
-------------
+Installing Solver Scheduler
+---------------------------
 
 The Solver Scheduler Manger will allow you to manage the solver scheduler in your openstack installation.
 
@@ -68,9 +68,12 @@ The Solver Scheduler Manger will allow you to manage the solver scheduler in you
 To install the manager, run:  
 ```curl https://raw.github.com/CiscoSystems/nova-solver-scheduler/master/install_manager | sudo bash```
 
-Then use the following commands as root:  
+To install solver scheduler with this manager, use the following command as root:  
 ```
 solver-scheduler install
+```
+To manage the solver scheduler, use one of the following commands as root:  
+```
 solver-scheduler activate
 solver-scheduler deactivate
 solver-scheduler remove
@@ -105,7 +108,7 @@ scheduler_solver_costs = RamCost, IpDistanceCost
 scheduler_solver_cost_weights = RamCost:0.25, IpDistanceCost:0.75
 
 # Constraints used in the solver
-scheduler_solver_constraints = NumHostsPerInstanceConstraint, MaxDiskAllocationPerHostConstraint, MaxRamAllocationPerHostConstraint
+scheduler_solver_constraints = ActiveHostConstraint, NumHostsPerInstanceConstraint, MaxDiskAllocationPerHostConstraint, MaxRamAllocationPerHostConstraint
 
 # Way of ram usage
 # set negative for balancing
@@ -170,4 +173,46 @@ Configuration Details
     
     - **MaxVcpuAllocationPerHostConstraint**  
         Cap the vcpu allocation of hosts.  
-    
+
+Examples
+--------
+
+This is an example usage for creating VMs with volume affinity using the solver scheduler.
+
+* Install the solver scheduler.
+
+* Update the nova.conf with following options:
+
+```
+# Default driver to use for the scheduler
+scheduler_driver = nova.scheduler.solver_scheduler.ConstraintSolverScheduler
+
+# Default solver to use for the solver scheduler
+scheduler_host_solver = nova.scheduler.solvers.hosts_pulp_solver_v2.HostsPulpSolver
+
+# Cost functions to use in the linear solver
+scheduler_solver_costs = IpDistanceCost
+
+# Weight of each cost (every cost function used should be given a weight.)
+scheduler_solver_cost_weights = IpDistanceCost:1.0
+
+# Constraints used in the solver
+scheduler_solver_constraints = ActiveHostConstraint, NumHostsPerInstanceConstraint, MaxDiskAllocationPerHostConstraint, MaxRamAllocationPerHostConstraint
+
+# Virtual-to-physical disk allocation ratio
+linearconstraint_disk_allocation_ratio = 1.5
+
+# Virtual-to-physical ram allocation ratio
+linearconstraint_ram_allocation_ratio = 1.5
+```
+
+* Restart nova-scheduler and then do the followings as admin:
+
+* Create multiple volumes at different hosts
+
+* Run the following command to boot a new instance. (The id of a volume you want to use should be provided as scheduler hint.)
+```
+nova boot --image=<image-id> --flavor=<flavor-id> --hint ip_distance_cost_volume_id_list=<volume-id> <server-name>
+```
+
+* The instance should be created at the same host as the chosen volume as long as the host is active and has enough resources.
