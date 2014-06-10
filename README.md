@@ -22,10 +22,9 @@ Key modules
 
     nova/scheduler/solvers/hosts_pulp_solver.py
 
-* There are two examples of pluggable solvers using coinor-pulp or or-tools package, where costs functions and linear constraints can be plugged into the solver.
+* The pluggable solvers using coinor-pulp package, where costs functions and linear constraints can be plugged into the solver.
 
-    nova/scheduler/solvers/hosts_pulp_solver_v2.py  
-    nova/scheduler/solvers/hosts_ortools_linear_solver.py
+    nova/scheduler/solvers/pluggable_hosts_pulp_solver.py
 
 Additional modules
 ------------------
@@ -33,26 +32,26 @@ Additional modules
 * The cost functions pluggable to solver:
 
     nova/scheduler/solvers/costs/ram_cost.py  
-    nova/scheduler/solvers/costs/ip_distance_cost.py  
+    nova/scheduler/solvers/costs/volume_affinity_cost.py  
 
 * The linear constraints that are pluggable to solver:
 
     nova/scheduler/solvers/linearconstraints/active_host_constraint.py  
-    nova/scheduler/solvers/linearconstraints/affinity_constraint.py  
-    nova/scheduler/solvers/linearconstraints/num_hosts_per_instance_constraint.py  
+    nova/scheduler/solvers/linearconstraints/all_hosts_constraint.py  
+    nova/scheduler/solvers/linearconstraints/availability_zone_constraint.py  
+    nova/scheduler/solvers/linearconstraints/different_host_constraint.py  
+    nova/scheduler/solvers/linearconstraints/same_host_constraint.py  
+    nova/scheduler/solvers/linearconstraints/io_ops_constraint.py  
+    nova/scheduler/solvers/linearconstraints/max_disk_allocation_constraint.py  
+    nova/scheduler/solvers/linearconstraints/max_ram_allocation_constraint.py  
+    nova/scheduler/solvers/linearconstraints/max_vcpu_allocation_constraint.py  
     nova/scheduler/solvers/linearconstraints/max_instances_per_host_constraint.py  
-    nova/scheduler/solvers/linearconstraints/resource_allocation_constraint.py  
+    nova/scheduler/solvers/linearconstraints/non_trivial_solution_constraint.py  
 
 Requirements
 ------------
 
 * coinor.pulp>=1.0.4
-* or-tools>=1.0.2902 (Alternative. There is a known issue with or-tools package. See below.)
-
-Known Issues
-------------
-
-* In some cases, the installation of or-tools package may cause unexpected crash of multiple OpenStack services due to a dependency problem. There has not been report of this issue for usage in Devstack environment.
 
 Installing Solver Scheduler
 ---------------------------
@@ -81,10 +80,10 @@ solver-scheduler update
 solver-scheduler help
 ```
 
-Configurations
---------------
+Configurations - Getting Started
+--------------------------------
 
-* This is a configuration sample for the solver-scheduler. Please add these options to nova.conf.
+* This is a configuration sample for the solver-scheduler. Please add/modify these options to nova.conf.
 * Note:
     - Instead of being added, the following existing options should be updated with new values: scheduler_driver
     - The module 'nova.scheduler.solvers.hosts_pulp_solver' is self-inclusive and non-pluggable for costs and constraints. Therefore, if the option 'scheduler_host_solver' is set to use this module, there is no need for additional costs/constraints configurations.
@@ -134,26 +133,35 @@ Configuration Details
         Set the multiplier to negative number for balanced ram usage,  
         set the multiplier to positive number for stacked ram usage.  
     
-    - **IpDistanceCost**  
-        Help to place instances close to a set of volumes.  
-        The distance between instances and volumes are evaluated by using ip address.  
-        The following scheuler hint is expected when using this cost:  
-        ```ip_distance_cost_volume_id_list = <a list of volume ids>```  
+    - **VolumeAffinityCost**  
+        Help to place instances at the same host as a specific volume, if possible.  
+        In order to use this cost, you need to pass a hint to the scheduler on booting a server.
+        ```nova boot ... --hint affinity_volume_id=<id of the affinity volume> ...```
 
 * Available linear constraints  
 
     - **ActiveHostConstraint**  
-        Only enabled and operational hosts are allowed in solution.  
+        By enabling this constraint, only enabled and operational hosts are allowed to be selected.  
         Normally this constraint should always be enabled.  
     
-    - **AffinityConstraint**  
-        Force instances to be placed at either different or same hosts as a given set of instances.  
-        The following scheduler hint is expected when using this constraint:  
-        ```different_host = <a list of instance uuids>``` or ```same_host= <a list of instance uuids>```  
-    
-    - **NumHostsPerInstanceConstraint**  
+    - **NonTrivialSolutionConstraint**  
         The purpose of this constraint is to avoid trivial solution (i.e. instances placed nowhere).  
-        Normally this constraint should always be enabled.  
+        Normally this constraint should always be enabled.
+    
+    - **MaxRamAllocationPerHostConstraint**  
+        Cap the virtual ram allocation of hosts.  
+        The following option should be set in configuration when using this constraint:  
+        ```ram_allocation_ratio = <a positive real number>``` (virtual-to-physical ram allocation ratio, if >1.0 then over-allocation is allowed.)  
+    
+    - **MaxDiskAllocationPerHostConstraint**  
+        Cap the virtual disk allocation of hosts.  
+        The following option should be set in configuration when using this constraint:  
+        ```disk_allocation_ratio = <a positive real number>``` (virtual-to-physical disk allocation ratio, if >1.0 then over-allocation is allowed.)  
+    
+    - **MaxVcpuAllocationPerHostConstraint**  
+        Cap the vcpu allocation of hosts.  
+        The following option should be set in configuration when using this constraint:  
+        ```cpu_allocation_ratio = <a positive real number>``` (virtual-to-physical cpu allocation ratio, if >1.0 then over-allocation is allowed.)  
     
     - **MaxInstancesPerHostConstraint**  
         Specify the maximum number of instances placed in each host in each scheduling process.  
@@ -161,18 +169,25 @@ Configuration Details
         ```max_instances_per_host = <a positive integer>```  
         By default, max_instances_per_host = 1, resulting in an anti-affinity placement solution.  
     
-    - **MaxDiskAllocationPerHostConstraint**  
-        Cap the virtual disk allocation of hosts.  
-        The following option should be set in configuration when using this constraint:  
-        ```linearconstraint_disk_allocation_ratio = <a positive real number>``` (virtual-to-physical disk allocation ratio, if >1.0 then over-allocation is allowed.)  
+    - **DifferentHostConstraint**  
+        Force instances to be placed at different hosts as specified instance(s).  
+        The following scheduler hint is expected when using this constraint:  
+        ```different_host = <a (list of) instance uuid(s)>```  
     
-    - **MaxRamAllocationPerHostConstraint**  
-        Cap the virtual ram allocation of hosts.  
-        The following option should be set in configuration when using this constraint:  
-        ```linearconstraint_ram_allocation_ratio = <a positive real number>``` (virtual-to-physical ram allocation ratio, if >1.0 then over-allocation is allowed.)  
+    - **SameHostConstraint**  
+        Force instances to be placed at same hosts as specified instance(s).  
+        The following scheduler hint is expected when using this constraint:  
+        ```same_host = <a (list) of instance uuid(s)>```  
     
-    - **MaxVcpuAllocationPerHostConstraint**  
-        Cap the vcpu allocation of hosts.  
+    - **AvailablilityZoneConstraint**  
+        Select hosts belongong to an availability zone.  
+        The following option should be set in configuration when using this constraint:  
+        ```default_availability_zone = <availability zone>```  
+    
+    - **IoOpsConstraint**  
+        Ensure the concurrent I/O operations number of selected hosts are within a threshold.  
+        The following option should be set in configuration when using this constraint:  
+        ```max_io_ops_per_host = <a positive number>```
 
 Examples
 --------
