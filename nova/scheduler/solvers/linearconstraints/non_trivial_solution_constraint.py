@@ -19,9 +19,9 @@ from nova.scheduler.solvers import linearconstraints
 LOG = logging.getLogger(__name__)
 
 
-class MaxInstancesPerHostConstraint(linearconstraints.BaseLinearConstraint):
-    """Constraint that specifies the maximum number of instances that
-    each host can launch.
+class NonTrivialSolutionConstraint(linearconstraints.BaseLinearConstraint):
+    """Constraint that forces each instance to be placed
+    at exactly one host, so as to avoid trivial solutions.
     """
 
     # The linear constraint should be formed as:
@@ -29,8 +29,6 @@ class MaxInstancesPerHostConstraint(linearconstraints.BaseLinearConstraint):
     # where (operator) is ==, >, >=, <, <=, !=, etc.
     # For convenience, the (constants) is merged into left-hand-side,
     # thus the right-hand-side is 0.
-
-    hint_name = 'max_instances_per_host'
 
     def __init__(self, variables, hosts, instance_uuids, request_spec,
                 filter_properties):
@@ -48,28 +46,23 @@ class MaxInstancesPerHostConstraint(linearconstraints.BaseLinearConstraint):
 
     def get_coefficient_vectors(self, variables, hosts, instance_uuids,
                                 request_spec, filter_properties):
-        """Calculate the coeffivient vectors."""
-        # The coefficient for each variable is 1 and constant in
-        # each constraint is -(max_instances_per_host)
-        scheduler_hints = filter_properties.get('scheduler_hints')
-        max_instances_per_host = scheduler_hints.get(self.hint_name, 1)
-        coefficient_matrix = [[1 for j in range(self.num_instances)] +
-                    [-max_instances_per_host] for i in range(self.num_hosts)]
-        return coefficient_matrix
+        # The coefficient for each variable is 1 and
+        # constant in each constraint is (-1).
+        coefficient_vectors = [[1 for i in range(self.num_hosts)] + [-1]
+                                for j in range(self.num_instances)]
+        return coefficient_vectors
 
     def get_variable_vectors(self, variables, hosts, instance_uuids,
                             request_spec, filter_properties):
-        """Reorganize the variables."""
         # The variable_matrix[i,j] denotes the relationship between
-        # host[i] and instance[j].
-        variable_matrix = []
-        variable_matrix = [[variables[i][j] for j in range(
-                    self.num_instances)] + [1] for i in range(self.num_hosts)]
-        return variable_matrix
+        # instance[i] and host[j]
+        variable_vectors = []
+        variable_vectors = [[variables[i][j] for i in range(self.num_hosts)] +
+                            [1] for j in range(self.num_instances)]
+        return variable_vectors
 
     def get_operations(self, variables, hosts, instance_uuids, request_spec,
                         filter_properties):
-        """Set operations for each constraint function."""
-        # Operations are '<='.
-        operations = [(lambda x: x <= 0) for i in range(self.num_hosts)]
+        # Operations are '=='.
+        operations = [(lambda x: x == 0) for j in range(self.num_instances)]
         return operations

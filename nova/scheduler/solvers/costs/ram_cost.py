@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Cisco Systems Inc.
+# Copyright (c) 2014 Cisco Systems, Inc.
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -15,35 +15,31 @@
 
 """Ram cost."""
 
-from oslo.config import cfg
-
-from nova import exception
 from nova.openstack.common import log as logging
 from nova.scheduler.solvers import costs as solvercosts
 
-CONF = cfg.CONF
+from oslo.config import cfg
+
 LOG = logging.getLogger(__name__)
 
+CONF = cfg.CONF
 
-ram_weight_opts = [
-        cfg.FloatOpt('ram_cost_optimization_multiplier',
-                     default=-1.0,
-                     help='Multiplier used for ram optimization cost metric. This '
-                          'solver uses a LP minimization problem. So a negative '
-                          'number would mean a cost maximization problem.'),
-]
-CONF.register_opts(ram_weight_opts)
 
 class RamCost(solvercosts.BaseCost):
-    """The cost is evaluated by hosts' free ram and a user-defined multiplier."""
-    
-    def get_cost_matrix(self,hosts,instance_uuids,request_spec,filter_properties):
+    """The cost is evaluated by the production of hosts' free memory
+    and a pre-defined multiplier.
+    """
+
+    def get_cost_matrix(self, hosts, instance_uuids, request_spec,
+                        filter_properties):
+        """Calculate the cost matrix."""
         num_hosts = len(hosts)
         if instance_uuids:
             num_instances = len(instance_uuids)
         else:
             num_instances = request_spec.get('num_instances', 1)
-        
-        costs = [[hosts[i].free_ram_mb*CONF.ram_cost_optimization_multiplier for j in range(num_instances)] for i in range(num_hosts)]
-        
+
+        costs = [[hosts[i].free_ram_mb * CONF.ram_weight_multiplier
+                for j in range(num_instances)] for i in range(num_hosts)]
+
         return costs

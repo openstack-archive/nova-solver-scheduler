@@ -19,6 +19,7 @@ from oslo.config import cfg
 from nova.scheduler.solvers import linearconstraints
 
 CONF = cfg.CONF
+CONF.import_opt('ram_allocation_ratio', 'nova.scheduler.filters.ram_filter')
 
 
 class MaxRamAllocationPerHostConstraint(

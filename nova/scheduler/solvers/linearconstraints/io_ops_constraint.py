@@ -15,28 +15,25 @@
 
 from oslo.config import cfg
 
+from nova.compute import api as compute
 from nova.openstack.common.gettextutils import _
 from nova.openstack.common import log as logging
 from nova.scheduler.solvers import linearconstraints
-from nova import servicegroup
-
-CONF = cfg.CONF
 
 LOG = logging.getLogger(__name__)
 
+CONF = cfg.CONF
+CONF.import_opt('max_io_ops_per_host', 'nova.scheduler.filters.io_ops_filter')
 
-class ActiveHostConstraint(linearconstraints.BaseLinearConstraint):
-    """Constraint that only allows active hosts to be selected."""
 
-    # The linear constraint should be formed as:
-    # coeff_matrix * var_matrix' (operator) (constants)
-    # where (operator) is ==, >, >=, <, <=, !=, etc.
-    # For convenience, the (constants) is merged into left-hand-side,
-    # thus the right-hand-side is 0.
+class IoOpsConstraint(linearconstraints.BaseLinearConstraint):
+    """A constraint to ensure only those hosts are selected whose number of
+    concurrent I/O operations are within a set threshold.
+    """
 
     def __init__(self, variables, hosts, instance_uuids, request_spec,
                 filter_properties):
-        self.servicegroup_api = servicegroup.API()
+        self.compute_api = compute.API()
         [self.num_hosts, self.num_instances] = self._get_host_instance_nums(
                                         hosts, instance_uuids, request_spec)
 
@@ -49,37 +46,44 @@ class ActiveHostConstraint(linearconstraints.BaseLinearConstraint):
             num_instances = request_spec.get('num_instances', 1)
         return [num_hosts, num_instances]
 
+    # The linear constraint should be formed as:
+    # coeff_matrix * var_matrix' (operator) constant_vector
+    # where (operator) is ==, >, >=, <, <=, !=, etc.
+    # For convenience, the constant_vector is merged into left-hand-side,
+    # thus the right-hand-side is always 0.
+
     def get_coefficient_vectors(self, variables, hosts, instance_uuids,
                                 request_spec, filter_properties):
-        """Calculate the coeffivient vectors."""
-        # Coefficients are 0 for active hosts and 1 otherwise
-        coefficient_matrix = []
+        # Coefficients are 0 for hosts within the limit and 1 for other hosts.
+        coefficient_vectors = []
         for host in hosts:
-            service = host.service
-            if service['disabled'] or not self.servicegroup_api.service_is_up(
-                                                                    service):
-                coefficient_matrix.append([1 for j in range(
-                                            self.num_instances)])
-                LOG.debug(_("%s is not active") % host.host)
+            num_io_ops = host.num_io_ops
+            max_io_ops = CONF.max_io_ops_per_host
+            passes = num_io_ops < max_io_ops
+            if passes:
+                coefficient_vectors.append([0 for j in range(
+                                                self.num_instances)])
             else:
-                coefficient_matrix.append([0 for j in range(
-                                            self.num_instances)])
-                LOG.debug(_("%s is ok") % host.host)
-        return coefficient_matrix
+                coefficient_vectors.append([1 for j in range(
+                                                self.num_instances)])
+                LOG.debug(_("%(host)s fails I/O ops check: Max IOs per host "
+                            "is set to %(max_io_ops)s"),
+                            {'host': host,
+                             'max_io_ops': max_io_ops})
+
+        return coefficient_vectors
 
     def get_variable_vectors(self, variables, hosts, instance_uuids,
                             request_spec, filter_properties):
-        """Reorganize the variables."""
-        # The variable_matrix[i,j] denotes the relationship between
+        # The variable_vectors[i,j] denotes the relationship between
         # host[i] and instance[j].
-        variable_matrix = []
-        variable_matrix = [[variables[i][j] for j in range(
+        variable_vectors = []
+        variable_vectors = [[variables[i][j] for j in range(
                         self.num_instances)] for i in range(self.num_hosts)]
-        return variable_matrix
+        return variable_vectors
 
     def get_operations(self, variables, hosts, instance_uuids, request_spec,
                         filter_properties):
-        """Set operations for each constraint function."""
         # Operations are '=='.
         operations = [(lambda x: x == 0) for i in range(self.num_hosts)]
         return operations

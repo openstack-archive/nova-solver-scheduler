@@ -19,6 +19,7 @@ from oslo.config import cfg
 from nova.scheduler.solvers import linearconstraints
 
 CONF = cfg.CONF
+CONF.import_opt('disk_allocation_ratio', 'nova.scheduler.filters.disk_filter')
 
 
 class MaxDiskAllocationPerHostConstraint(

@@ -13,48 +13,72 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-"""Volume affinity cost."""
+"""Volume affinity cost.
+   This pluggable cost provides a way to schedule a VM on a host that has
+   a specified volume.  In the cost matrix used for the linear programming
+   optimization problem, the entries for the host that contains the
+   specified volume is given as 0, and 1 for other hosts. So all the other
+   hosts have equal cost and are considered equal. Currently this solution
+   allows you to provide only one volume_id as a hint, so this solution
+   works best for scheduling a single VM. Another limitation is that the
+   user needs to have an admin context to obtain the host information from
+   the cinderclient. Without the knowledge of the host containing the volume
+   all hosts will have the same cost of 1.
+"""
 
 from cinderclient import exceptions as client_exceptions
-from nova import exception
+
+from nova import context as novacontext
 from nova.openstack.common.gettextutils import _
 from nova.openstack.common import log as logging
-import nova.volume.cinder as volumecinder
+from nova.scheduler import driver as scheduler_driver
 from nova.scheduler.solvers import costs as solvercosts
+import nova.volume.cinder as volumecinder
 
 LOG = logging.getLogger(__name__)
 
+
 class VolumeAffinityCost(solvercosts.BaseCost):
     """The cost is 0 for same-as-volume host and 1 otherwise."""
-    
-    hint_name = 'same_host_volume_id'
-    
-    def get_cost_matrix(self,hosts,instance_uuids,request_spec,filter_properties):
+
+    hint_name = 'affinity_volume_id'
+
+    def get_cost_matrix(self, hosts, instance_uuids, request_spec,
+                        filter_properties):
         num_hosts = len(hosts)
         if instance_uuids:
             num_instances = len(instance_uuids)
         else:
             num_instances = request_spec.get('num_instances', 1)
-        
+
         context = filter_properties.get('context')
-        scheduler_hints = filter_properties.get('scheduler_hints')
-        volume_id = scheduler_hints.get(self.hint_name, False)
-        LOG.debug(_("volume id: %s") %volume_id)
-        volume_host = None
-        if volume_id is not None:
-            try:
-                volume = volumecinder.cinderclient(context).volumes.get(volume_id)
-                volume_host = getattr(volume, 'os-vol-host-attr:host', None)
-                LOG.debug(_("volume host: %s") %volume_host)
-            except client_exceptions.NotFound:
-                LOG.warning('volume with provided id ("%s") was not found', volume_id)
-        
-        cost_matrix = [[1.0 for j in range(num_instances)] for i in range(num_hosts)]
-        if volume_host is not None:
-            for i in range(num_hosts):
-                host_state = hosts[i]
-                if host_state.host == volume_host:
-                    cost_matrix[i] = [0.0 for j in range(num_instances)]
-                LOG.debug(_("this host %(host1)s " "volume host %(host2)s"),{"host1":host_state.host,"host2":volume_host})
-        
+        scheduler_hints = filter_properties.get('scheduler_hints', None)
+
+        cost_matrix = [[1.0 for j in range(num_instances)]
+                       for i in range(num_hosts)]
+
+        if scheduler_hints is not None:
+            volume_id = scheduler_hints.get(self.hint_name, None)
+            LOG.debug(_("volume id: %s") % volume_id)
+            if volume_id:
+                volume_host = None
+                try:
+                    schcontext = scheduler_driver.get_scheduler_context()
+                    volume = volumecinder.cinderclient(schcontext).volumes.get(
+                                 volume_id)
+                    volume_host = getattr(volume, 'os-vol-host-attr:host',
+                                          None)
+                    LOG.debug(_("volume host: %s") % volume_host)
+                except client_exceptions.NotFound:
+                    LOG.warning('volume with provided id ("%s") was not found',
+                                volume_id)
+
+                if volume_host:
+                    for i in range(num_hosts):
+                        host_state = hosts[i]
+                        if host_state.host == volume_host:
+                            cost_matrix[i] = [0.0
+                                              for j in range(num_instances)]
+                        LOG.debug(_("this host: %(h1)s volume host: %(h2)s") %
+                                  {"h1": host_state.host, "h2": volume_host})
         return cost_matrix
