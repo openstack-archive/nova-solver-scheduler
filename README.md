@@ -53,7 +53,7 @@ Requirements
 
 * coinor.pulp>=1.0.4
 
-Installing Solver Scheduler
+Installation
 ---------------------------
 
 The Solver Scheduler Manger will allow you to manage the solver scheduler in your openstack installation.
@@ -83,42 +83,99 @@ solver-scheduler help
 Configurations - Getting Started
 --------------------------------
 
-* This is a configuration sample for the solver-scheduler. Please add/modify these options to nova.conf.
+* This is a configuration sample for the solver-scheduler. Please add/modify these options in /etc/nova/nova.conf.
 * Note:
-    - Instead of being added, the following existing options should be updated with new values: scheduler_driver
+    - Please make sure that options in the configuration file are not duplicated. If an option name already exists, modify its value instead of adding a new one of the same name.
     - The module 'nova.scheduler.solvers.hosts_pulp_solver' is self-inclusive and non-pluggable for costs and constraints. Therefore, if the option 'scheduler_host_solver' is set to use this module, there is no need for additional costs/constraints configurations.
-    - Please refer to the 'Configuration Details' section below for proper configuration of costs and constraints.
+    - Please refer to the 'Configuration Details' section below for proper configuration and usage of costs and constraints.
 
 ```
+[Default]
+
+...
+
 #
-# Solver Scheduler Options
+# Options defined in nova.scheduler.manager
 #
 
-# Default driver to use for the scheduler
-scheduler_driver = nova.scheduler.solver_scheduler.ConstraintSolverScheduler
+# Default driver to use for the scheduler (string value)
+scheduler_driver=nova.scheduler.solver_scheduler.ConstraintSolverScheduler
 
-# Default solver to use for the solver scheduler
-scheduler_host_solver = nova.scheduler.solvers.hosts_pulp_solver_v2.HostsPulpSolver
+#
+# Options defined in nova.scheduler.filters.core_filter
+#
 
-# Cost functions to use in the linear solver
-scheduler_solver_costs = RamCost, IpDistanceCost
+# Virtual CPU to physical CPU allocation ratio which affects
+# all CPU filters. This configuration specifies a global ratio
+# for CoreFilter. For AggregateCoreFilter, it will fall back
+# to this configuration value if no per-aggregate setting
+# found. This option is also used in Solver Scheduler for the
+# MaxVcpuAllocationPerHostConstraint  (floating point value)
+cpu_allocation_ratio=16.0
 
-# Weight of each cost (every cost function used should be given a weight.)
-scheduler_solver_cost_weights = RamCost:0.25, IpDistanceCost:0.75
+#
+# Options defined in nova.scheduler.filters.disk_filter
+#
 
-# Constraints used in the solver
-scheduler_solver_constraints = ActiveHostConstraint, NumHostsPerInstanceConstraint, MaxDiskAllocationPerHostConstraint, MaxRamAllocationPerHostConstraint
+# Virtual disk to physical disk allocation ratio (floating
+# point value)
+disk_allocation_ratio=1.0
 
-# Way of ram usage
-# set negative for balancing
-# set positive for stacking
-ram_cost_optimization_multiplier = -1
+#
+# Options defined in nova.scheduler.filters.io_ops_filter
+#
 
-# Virtual-to-physical disk allocation ratio
-linearconstraint_disk_allocation_ratio = 1.0
+# Ignore hosts that have too many
+# builds/resizes/snaps/migrations. (integer value)
+max_io_ops_per_host=8
 
-# Virtual-to-physical ram allocation ratio
-linearconstraint_ram_allocation_ratio = 1.0
+#
+# Options defined in nova.scheduler.filters.ram_filter
+#
+
+# Virtual ram to physical ram allocation ratio which affects
+# all ram filters. This configuration specifies a global ratio
+# for RamFilter. For AggregateRamFilter, it will fall back to
+# this configuration value if no per-aggregate setting found.
+# (floating point value)
+ram_allocation_ratio=1.5
+
+#
+# Options defined in nova.scheduler.weights.ram
+#
+
+# Multiplier used for weighing ram.  Negative numbers mean to
+# stack vs spread. (floating point value)
+ram_weight_multiplier=1.0
+
+
+[solver_scheduler]
+
+#
+# Options defined in nova.scheduler.solver_scheduler
+#
+
+# The pluggable solver implementation to use. By default, a
+# reference solver implementation is included that models the
+# problem as a Linear Programming (LP) problem using PULP.
+# (string value)
+scheduler_host_solver=nova.scheduler.solvers.pluggable_hosts_pulp_solver.HostsPulpSolver
+
+
+#
+# Options defined in nova.scheduler.solvers
+#
+
+# Which constraints to use in scheduler solver (list value)
+scheduler_solver_constraints=ActiveHostConstraint, NonTrivialSolutionConstraint
+
+# Assign weight for each cost (list value)
+scheduler_solver_cost_weights=RamCost:1.0
+
+# Which cost matrices to use in the scheduler solver.
+# (list value)
+scheduler_solver_costs=RamCost
+
 ```
 
 Configuration Details
