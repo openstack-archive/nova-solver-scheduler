@@ -90,7 +90,7 @@ Configurations - Getting Started
     - Please refer to the 'Configuration Details' section below for proper configuration and usage of costs and constraints.
 
 ```
-[Default]
+[DEFAULT]
 
 ...
 
