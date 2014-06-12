@@ -13,13 +13,18 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from oslo.config import cfg
+
 from nova.openstack.common import log as logging
 from nova.scheduler.solvers import linearconstraints
+
+CONF = cfg.CONF
+CONF.import_opt("max_instances_per_host", "nova.scheduler.filters.num_instances_filter")
 
 LOG = logging.getLogger(__name__)
 
 
-class MaxInstancesPerHostConstraint(linearconstraints.BaseLinearConstraint):
+class NumInstancesPerHostConstraint(linearconstraints.BaseLinearConstraint):
     """Constraint that specifies the maximum number of instances that
     each host can launch.
     """
@@ -29,8 +34,6 @@ class MaxInstancesPerHostConstraint(linearconstraints.BaseLinearConstraint):
     # where (operator) is ==, >, >=, <, <=, !=, etc.
     # For convenience, the (constants) is merged into left-hand-side,
     # thus the right-hand-side is 0.
-
-    hint_name = 'max_instances_per_host'
 
     def __init__(self, variables, hosts, instance_uuids, request_spec,
                 filter_properties):
@@ -51,10 +54,10 @@ class MaxInstancesPerHostConstraint(linearconstraints.BaseLinearConstraint):
         """Calculate the coeffivient vectors."""
         # The coefficient for each variable is 1 and constant in
         # each constraint is -(max_instances_per_host)
-        scheduler_hints = filter_properties.get('scheduler_hints')
-        max_instances_per_host = scheduler_hints.get(self.hint_name, 1)
+        supply = [self._get_usable_instance_num(hosts[i])
+                  for i in range(self.num_hosts)]
         coefficient_matrix = [[1 for j in range(self.num_instances)] +
-                    [-max_instances_per_host] for i in range(self.num_hosts)]
+                    [-supply[i]] for i in range(self.num_hosts)]
         return coefficient_matrix
 
     def get_variable_vectors(self, variables, hosts, instance_uuids,
@@ -73,3 +76,12 @@ class MaxInstancesPerHostConstraint(linearconstraints.BaseLinearConstraint):
         # Operations are '<='.
         operations = [(lambda x: x <= 0) for i in range(self.num_hosts)]
         return operations
+
+    def _get_usable_instance_num(self, host_state):
+        """This method returns the usable number of instance
+           for the given host.
+        """
+        num_instances = host_state.num_instances
+        max_instances_allowed = CONF.max_instances_per_host
+        usable_instance_num = max_instances_allowed - num_instance
+        return usable_instance_num
