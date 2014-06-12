@@ -303,6 +303,17 @@
 
 
 #
+# Options defined in nova.policy
+#
+
+# JSON file representing policy (string value)
+#policy_file=policy.json
+
+# Rule checked when requested rule is not found (string value)
+#policy_default_rule=default
+
+
+#
 # Options defined in nova.quota
 #
 
@@ -333,9 +344,9 @@
 # Number of bytes allowed per injected file (integer value)
 #quota_injected_file_content_bytes=10240
 
-# Length of injected file path (integer value)
-# Deprecated group/name - [DEFAULT]/quota_injected_file_path_bytes
-#quota_injected_file_path_length=255
+# Number of bytes allowed per injected file path (integer
+# value)
+#quota_injected_file_path_bytes=255
 
 # Number of security groups per project (integer value)
 #quota_security_groups=10
@@ -530,7 +541,7 @@
 
 # The strategy to use for auth: noauth or keystone. (string
 # value)
-#auth_strategy=keystone
+#auth_strategy=noauth
 
 # Treat X-Forwarded-For as the canonical remote address. Only
 # enable this if you have a sanitizing proxy. (boolean value)
@@ -793,6 +804,18 @@
 
 
 #
+# Options defined in nova.cmd.spicehtml5proxy
+#
+
+# Host on which to listen for incoming requests (string value)
+#spicehtml5proxy_host=0.0.0.0
+
+# Port on which to listen for incoming requests (integer
+# value)
+#spicehtml5proxy_port=6082
+
+
+#
 # Options defined in nova.compute.api
 #
 
@@ -882,15 +905,11 @@
 #maximum_instance_delete_attempts=5
 
 # Interval to pull network bandwidth usage info. Not supported
-# on all hypervisors. Set to -1 to disable. Setting this to 0
-# will disable, but this will change in the K release to mean
-# "run at the default rate". (integer value)
+# on all hypervisors. Set to 0 to disable. (integer value)
 #bandwidth_poll_interval=600
 
 # Interval to sync power states between the database and the
-# hypervisor. Set to -1 to disable. Setting this to 0 will
-# disable, but this will change in Juno to mean "run at the
-# default rate". (integer value)
+# hypervisor (integer value)
 #sync_power_state_interval=600
 
 # Number of seconds between instance info_cache self healing
@@ -905,10 +924,8 @@
 # value)
 #volume_usage_poll_interval=0
 
-# Interval in seconds for polling shelved instances to
-# offload. Set to -1 to disable.Setting this to 0 will
-# disable, but this will change in Juno to mean "run at the
-# default rate". (integer value)
+# Interval in seconds for polling shelved instances to offload
+# (integer value)
 #shelved_poll_interval=3600
 
 # Time in seconds before a shelved instance is eligible for
@@ -1278,7 +1295,7 @@
 #routing_source_ip=$my_ip
 
 # Lifetime of a DHCP lease in seconds (integer value)
-#dhcp_lease_time=86400
+#dhcp_lease_time=120
 
 # If set, uses specific DNS server for dnsmasq. Can be
 # specified multiple times. (multi valued)
@@ -1537,14 +1554,14 @@
 # Options defined in nova.openstack.common.eventlet_backdoor
 #
 
-# Enable eventlet backdoor.  Acceptable values are 0, <port>,
+# Enable eventlet backdoor. Acceptable values are 0, <port>
 # and <start>:<end>, where 0 results in listening on a random
-# tcp port number; <port> results in listening on the
-# specified port number (and not enabling backdoor if that
-# port is in use); and <start>:<end> results in listening on
-# the smallest unused port number within the specified range
-# of port numbers.  The chosen port is displayed in the
-# service's log file. (string value)
+# tcp port number, <port> results in listening on the
+# specified port number and not enabling backdoorif it is in
+# use and <start>:<end> results in listening on the smallest
+# unused port number within the specified range of port
+# numbers. The chosen port is displayed in the service's log
+# file. (string value)
 #backdoor_port=<None>
 
 
@@ -1571,48 +1588,47 @@
 # of default WARNING level). (boolean value)
 #verbose=false
 
-# Log output to standard error. (boolean value)
+# Log output to standard error (boolean value)
 #use_stderr=true
 
-# Format string to use for log messages with context. (string
+# format string to use for log messages with context (string
 # value)
-#logging_context_format_string=%(asctime)s.%(msecs)03d %(process)d %(levelname)s %(name)s [%(request_id)s %(user_identity)s] %(instance)s%(message)s
+#logging_context_format_string=%(asctime)s.%(msecs)03d %(process)d %(levelname)s %(name)s [%(request_id)s %(user)s %(tenant)s] %(instance)s%(message)s
 
-# Format string to use for log messages without context.
+# format string to use for log messages without context
 # (string value)
 #logging_default_format_string=%(asctime)s.%(msecs)03d %(process)d %(levelname)s %(name)s [-] %(instance)s%(message)s
 
-# Data to append to log format when level is DEBUG. (string
+# data to append to log format when level is DEBUG (string
 # value)
 #logging_debug_format_suffix=%(funcName)s %(pathname)s:%(lineno)d
 
-# Prefix each line of exception output with this format.
+# prefix each line of exception output with this format
 # (string value)
 #logging_exception_prefix=%(asctime)s.%(msecs)03d %(process)d TRACE %(name)s %(instance)s
 
-# List of logger=LEVEL pairs. (list value)
-#default_log_levels=amqp=WARN,amqplib=WARN,boto=WARN,qpid=WARN,sqlalchemy=WARN,suds=INFO,oslo.messaging=INFO,iso8601=WARN,requests.packages.urllib3.connectionpool=WARN
+# list of logger=LEVEL pairs (list value)
+#default_log_levels=amqp=WARN,amqplib=WARN,boto=WARN,qpid=WARN,sqlalchemy=WARN,suds=INFO,oslo.messaging=INFO,iso8601=WARN
 
-# Enables or disables publication of error events. (boolean
-# value)
+# publish error events (boolean value)
 #publish_errors=false
 
-# Enables or disables fatal status of deprecations. (boolean
-# value)
+# make deprecations fatal (boolean value)
 #fatal_deprecations=false
 
-# The format for an instance that is passed with the log
-# message.  (string value)
+# If an instance is passed with the log message, format it
+# like this (string value)
 #instance_format="[instance: %(uuid)s] "
 
-# The format for an instance UUID that is passed with the log
-# message.  (string value)
+# If an instance UUID is passed with the log message, format
+# it like this (string value)
 #instance_uuid_format="[instance: %(uuid)s] "
 
-# The name of a logging configuration file. This file is
-# appended to any existing logging configuration files. For
-# details about logging configuration files, see the Python
-# logging module documentation. (string value)
+# The name of logging configuration file. It does not disable
+# existing loggers, but just appends specified logging
+# configuration to any other existing logging options. Please
+# see the Python logging module documentation for details on
+# logging configuration files. (string value)
 # Deprecated group/name - [DEFAULT]/log_config
 #log_config_append=<None>
 
@@ -1624,7 +1640,7 @@
 #log_format=<None>
 
 # Format string for %%(asctime)s in log records. Default:
-# %(default)s . (string value)
+# %(default)s (string value)
 #log_date_format=%Y-%m-%d %H:%M:%S
 
 # (Optional) Name of log file to output to. If no default is
@@ -1633,23 +1649,22 @@
 #log_file=<None>
 
 # (Optional) The base directory used for relative --log-file
-# paths. (string value)
+# paths (string value)
 # Deprecated group/name - [DEFAULT]/logdir
 #log_dir=<None>
 
 # Use syslog for logging. Existing syslog format is DEPRECATED
-# during I, and will chang in J to honor RFC5424. (boolean
-# value)
+# during I, and then will be changed in J to honor RFC5424
+# (boolean value)
 #use_syslog=false
 
-# (Optional) Enables or disables syslog rfc5424 format for
-# logging. If enabled, prefixes the MSG part of the syslog
-# message with APP-NAME (RFC5424). The format without the APP-
-# NAME is deprecated in I, and will be removed in J. (boolean
-# value)
+# (Optional) Use syslog rfc5424 format for logging. If
+# enabled, will add APP-NAME (RFC5424) before the MSG part of
+# the syslog message.  The old format without APP-NAME is
+# deprecated in I, and will be removed in J. (boolean value)
 #use_syslog_rfc_format=false
 
-# Syslog facility to receive log lines. (string value)
+# syslog facility to receive log lines (string value)
 #syslog_log_facility=LOG_USER
 
 
@@ -1668,18 +1683,6 @@
 # Some periodic tasks can be run in a separate process. Should
 # we run them here? (boolean value)
 #run_external_periodic_tasks=true
-
-
-#
-# Options defined in nova.openstack.common.policy
-#
-
-# The JSON file that defines policies. (string value)
-#policy_file=policy.json
-
-# Default rule. Enforced when a requested rule is not found.
-# (string value)
-#policy_default_rule=default
 
 
 #
@@ -1752,7 +1755,8 @@
 # all CPU filters. This configuration specifies a global ratio
 # for CoreFilter. For AggregateCoreFilter, it will fall back
 # to this configuration value if no per-aggregate setting
-# found. (floating point value)
+# found. This option is also used in Solver Scheduler for the
+# MaxVcpuAllocationPerHostConstraint  (floating point value)
 #cpu_allocation_ratio=16.0
 
 
@@ -1769,9 +1773,8 @@
 # Options defined in nova.scheduler.filters.io_ops_filter
 #
 
-# Tells filters to ignore hosts that have this many or more
-# instances currently in build, resize, snapshot, migrate,
-# rescue or unshelve task states (integer value)
+# Ignore hosts that have too many
+# builds/resizes/snaps/migrations. (integer value)
 #max_io_ops_per_host=8
 
 
@@ -1989,9 +1992,7 @@
 #
 
 # Number of seconds to wait between runs of the image cache
-# manager. Set to -1 to disable. Setting this to 0 will
-# disable, but this will change in the K release to mean "run
-# at the default rate". (integer value)
+# manager (integer value)
 #image_cache_manager_interval=2400
 
 # Where cached images are stored under $instances_path. This
@@ -2006,6 +2007,17 @@
 # Unused unresized base images younger than this will not be
 # removed (integer value)
 #remove_unused_original_minimum_age_seconds=86400
+
+
+#
+# Options defined in nova.virt.imagehandler
+#
+
+# Specifies which image handler extension names to use for
+# handling images. The first extension in the list which can
+# handle the image with a suitable location will be used.
+# (list value)
+#image_handlers=download
 
 
 #
@@ -2095,6 +2107,18 @@
 # Allow attach between instance and volume in different
 # availability zones. (boolean value)
 #cinder_cross_az_attach=true
+
+# Keystone Cinder account username (string value)
+#cinder_admin_user=<None>
+
+# Keystone Cinder account password (string value)
+#cinder_admin_password=<None>
+
+# Keystone Cinder account tenant name (string value)
+#cinder_admin_tenant_name=service
+
+# Complete public Identity API endpoint (string value)
+#cinder_auth_uri=<None>
 
 
 [baremetal]
@@ -2434,16 +2458,6 @@
 [database]
 
 #
-# Options defined in nova.db.api
-#
-
-# Enable the experimental use of thread pooling for all DB API
-# calls (boolean value)
-# Deprecated group/name - [DEFAULT]/dbapi_use_tpool
-#use_tpool=false
-
-
-#
 # Options defined in nova.db.sqlalchemy.api
 #
 
@@ -2473,12 +2487,10 @@
 # Deprecated group/name - [sql]/connection
 #connection=<None>
 
-# The SQL mode to be used for MySQL sessions. This option,
-# including the default, overrides any server-set SQL mode. To
-# use whatever SQL mode is set by the server configuration,
-# set this to no value. Example: mysql_sql_mode= (string
-# value)
-#mysql_sql_mode=TRADITIONAL
+# The SQL mode to be used for MySQL sessions (default is
+# empty, meaning do not override any server-side SQL mode
+# setting) (string value)
+#mysql_sql_mode=<None>
 
 # Timeout before idle sql connections are reaped (integer
 # value)
@@ -2834,8 +2846,7 @@
 # Options defined in nova.virt.libvirt.driver
 #
 
-# Rescue ami image. This will not be used if an image id is
-# provided by the user. (string value)
+# Rescue ami image (string value)
 #rescue_image_id=<None>
 
 # Rescue aki image (string value)
@@ -3176,21 +3187,22 @@
 #scheduler_host_solver=nova.scheduler.solvers.hosts_pulp_solver.HostsPulpSolver
 
 
-[spice]
-
 #
-# Options defined in nova.cmd.spicehtml5proxy
+# Options defined in nova.scheduler.solvers
 #
 
-# Host on which to listen for incoming requests (string value)
-# Deprecated group/name - [DEFAULT]/spicehtml5proxy_host
-#html5proxy_host=0.0.0.0
+# Which constraints to use in scheduler solver (list value)
+#scheduler_solver_constraints=
 
-# Port on which to listen for incoming requests (integer
+# Assign weight for each cost (list value)
+#scheduler_solver_cost_weights=RamCost:1.0
+
+# Which cost matrices to use in the scheduler solver. (list
 # value)
-# Deprecated group/name - [DEFAULT]/spicehtml5proxy_port
-#html5proxy_port=6082
+#scheduler_solver_costs=RamCost
 
+
+[spice]
 
 #
 # Options defined in nova.spice
@@ -3367,9 +3379,6 @@
 # (string value)
 #host_ip=<None>
 
-# Port for connection to VMware ESX/VC host. (integer value)
-#host_port=443
-
 # Username for connection to VMware ESX/VC host. (string
 # value)
 #host_username=<None>
@@ -3411,9 +3420,6 @@
 # value)
 #vlan_interface=vmnic0
 
-# Name of Integration Bridge (string value)
-#integration_bridge=br-int
-
 
 #
 # Options defined in nova.virt.vmwareapi.vim
@@ -3437,6 +3443,14 @@
 # Any remaining objects may be retrieved with additional
 # requests. (integer value)
 #maximum_objects=100
+
+
+#
+# Options defined in nova.virt.vmwareapi.vmops
+#
+
+# Name of Integration Bridge (string value)
+#integration_bridge=br-int
 
 
 [xenserver]

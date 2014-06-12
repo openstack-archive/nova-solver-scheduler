@@ -28,7 +28,6 @@
 
 from cinderclient import exceptions as client_exceptions
 
-from nova import context as novacontext
 from nova.openstack.common.gettextutils import _
 from nova.openstack.common import log as logging
 from nova.scheduler import driver as scheduler_driver
@@ -61,17 +60,26 @@ class VolumeAffinityCost(solvercosts.BaseCost):
             volume_id = scheduler_hints.get(self.hint_name, None)
             LOG.debug(_("volume id: %s") % volume_id)
             if volume_id:
+                volume = None
                 volume_host = None
                 try:
-                    schcontext = scheduler_driver.get_scheduler_context()
                     volume = volumecinder.cinderclient(schcontext).volumes.get(
                                  volume_id)
-                    volume_host = getattr(volume, 'os-vol-host-attr:host',
-                                          None)
+                    if volume:
+                        volume = volumecinder.cinderadminclient().volumes.get(
+                                    volume_id)
+                        volume_host = getattr(volume, 'os-vol-host-attr:host',
+                                        None)
                     LOG.debug(_("volume host: %s") % volume_host)
                 except client_exceptions.NotFound:
-                    LOG.warning('volume with provided id ("%s") was not found',
-                                volume_id)
+                    LOG.warning(
+                        _("volume with provided id ("%s") was not found")
+                        % volume_id)
+                except client_exception.Unauthorized:
+                    LOG.warning(_("Failed to retrieve volume %s: unauthorized")
+                        % volume_id)
+                except:
+                    LOG.warning(_("Failed to retrieve volume due to an error"))
 
                 if volume_host:
                     for i in range(num_hosts):
@@ -81,4 +89,6 @@ class VolumeAffinityCost(solvercosts.BaseCost):
                                               for j in range(num_instances)]
                         LOG.debug(_("this host: %(h1)s volume host: %(h2)s") %
                                   {"h1": host_state.host, "h2": volume_host})
+                else:
+                    LOG.warning(_("Cannot find volume host."))
         return cost_matrix
