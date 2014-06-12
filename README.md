@@ -85,7 +85,7 @@ Configurations - Getting Started
 
 * This is a configuration sample for the solver-scheduler. Please add/modify these options in /etc/nova/nova.conf.
 * Note:
-    - Please make sure that options in the configuration file are not duplicated. If an option name already exists, modify its value instead of adding a new one of the same name.
+    - Please carefully make sure that options in the configuration file are not duplicated. If an option name already exists, modify its value instead of adding a new one of the same name.
     - The module 'nova.scheduler.solvers.hosts_pulp_solver' is self-inclusive and non-pluggable for costs and constraints. Therefore, if the option 'scheduler_host_solver' is set to use this module, there is no need for additional costs/constraints configurations.
     - Please refer to the 'Configuration Details' section below for proper configuration and usage of costs and constraints.
 
@@ -147,6 +147,22 @@ ram_allocation_ratio=1.5
 # Multiplier used for weighing ram.  Negative numbers mean to
 # stack vs spread. (floating point value)
 ram_weight_multiplier=1.0
+
+#
+# Options defined in nova.volume.cinder
+#
+
+# Keystone Cinder account username (string value)
+cinder_admin_user=<None>
+
+# Keystone Cinder account password (string value)
+cinder_admin_password=<None>
+
+# Keystone Cinder account tenant name (string value)
+cinder_admin_tenant_name=service
+
+# Complete public Identity API endpoint (string value)
+cinder_auth_uri=<None>
 
 
 [solver_scheduler]
