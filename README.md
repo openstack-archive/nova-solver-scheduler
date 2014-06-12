@@ -122,6 +122,13 @@ cpu_allocation_ratio=16.0
 disk_allocation_ratio=1.0
 
 #
+# Options defined in nova.scheduler.filters.num_instances_filter
+#
+
+# Ignore hosts that have too many instances (integer value)
+max_instances_per_host=50
+
+#
 # Options defined in nova.scheduler.filters.io_ops_filter
 #
 
@@ -236,11 +243,10 @@ Configuration Details
         The following option should be set in configuration when using this constraint:  
         ```cpu_allocation_ratio = <a positive real number>``` (virtual-to-physical cpu allocation ratio, if >1.0 then over-allocation is allowed.)  
     
-    - **MaxInstancesPerHostConstraint**  
-        Specify the maximum number of instances placed in each host in each scheduling process.  
-        The following scheduler hint is expected when using this constraint:  
+    - **NumInstancesPerHostConstraint**  
+        Specify the maximum number of instances that can be placed in each host.  
+        The following option is expected in the configuration:  
         ```max_instances_per_host = <a positive integer>```  
-        By default, max_instances_per_host = 1, resulting in an anti-affinity placement solution.  
     
     - **DifferentHostConstraint**  
         Force instances to be placed at different hosts as specified instance(s).  
