@@ -266,7 +266,10 @@ Configuration Details
     - **RamCost**  
         Help to balance (or stack) ram usage of hosts.  
         The following option should be set in configuration when using this cost:  
-        ```ram_cost_optimization_multiplier = <a real number>```  
+        ```
+        ram_weight_multiplier = <a real number>
+        ram_allocation_ratio = <a float value>
+        ```  
         Set the multiplier to negative number for balanced ram usage,  
         set the multiplier to positive number for stacked ram usage.  
     
