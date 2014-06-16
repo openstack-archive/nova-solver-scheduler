@@ -89,8 +89,7 @@ We provide 2 ways to install the solver-scheduler code. In this section, we will
 
     - Done. The nova-solver-scheduler should be working with a demo configuration.  
 
-    - To use the default nova scheduler after installation, you can just replace the option ```scheduler_driver``` to the original value in the nova configuration file, which is normally:  
-      ```scheduler_driver=nova.scheduler.filter_scheduler.FilterScheduler```  
+    - To use the default nova scheduler after installation, you can just replace the option ```scheduler_driver``` to the original value in the nova configuration file, which is normally: ```scheduler_driver=nova.scheduler.filter_scheduler.FilterScheduler```.  
       It is not necessary to restore all the modified files if you decide not to use the solver scheduler, because the code is supposed to be compatible with the default nova scheduler.  
 
 * **Automatic Installation**  
@@ -142,7 +141,7 @@ Configurations
 * This is a (default) configuration sample for the solver-scheduler. Please add/modify these options in /etc/nova/nova.conf.
 * Note:
     - Please carefully make sure that options in the configuration file are not duplicated. If an option name already exists, modify its value instead of adding a new one of the same name.
-    - The module 'nova.scheduler.solvers.hosts_pulp_solver' is self-inclusive and non-pluggable for costs and constraints. Therefore, if the option 'scheduler_host_solver' is set to use this module, there is no need for additional costs/constraints configurations.
+    - The solver class 'nova.scheduler.solvers.hosts_pulp_solver.HostsPulpSolver' is used by default in installation for demo purpose. It is self-inclusive and non-pluggable for costs and constraints. Please switch to 'nova.scheduler.solvers.pluggable_hosts_pulp_solver.HostsPulpSolver' for a fully functional (pluggable) solver.
     - Please refer to the 'Configuration Details' section below for proper configuration and usage of costs and constraints.
 
 ```
@@ -237,6 +236,8 @@ cinder_auth_uri=<None>
 # The pluggable solver implementation to use. By default, a
 # reference solver implementation is included that models the
 # problem as a Linear Programming (LP) problem using PULP.
+# To use a fully functional (pluggable) solver, set the option as
+# "nova.scheduler.solvers.pluggable_hosts_pulp_solver.HostsPulpSolver"
 # (string value)
 scheduler_host_solver=nova.scheduler.solvers.pluggable_hosts_pulp_solver.HostsPulpSolver
 
@@ -271,8 +272,15 @@ Configuration Details
     
     - **VolumeAffinityCost**  
         Help to place instances at the same host as a specific volume, if possible.  
-        In order to use this cost, you need to pass a hint to the scheduler on booting a server.
-        ```nova boot ... --hint affinity_volume_id=<id of the affinity volume> ...```
+        In order to use this cost, you need to pass a hint to the scheduler on booting a server.  
+        ```nova boot ... --hint affinity_volume_id=<id of the affinity volume> ...```  
+        You also need to have the following options set in the configuration.  
+        ```
+        cinder_admin_user=<cinder username>
+        cinder_admin_password=<cinder password>
+        cinder_admin_tenant_name=<cinder tenant name>
+        cinder_auth_uri=<the identity api endpoint>
+        ```  
 
 * Available linear constraints  
 
@@ -334,35 +342,53 @@ This is an example usage for creating VMs with volume affinity using the solver 
 * Update the nova.conf with following options:
 
 ```
+[DEFAULT]
+...
 # Default driver to use for the scheduler
 scheduler_driver = nova.scheduler.solver_scheduler.ConstraintSolverScheduler
 
-# Default solver to use for the solver scheduler
-scheduler_host_solver = nova.scheduler.solvers.hosts_pulp_solver_v2.HostsPulpSolver
-
-# Cost functions to use in the linear solver
-scheduler_solver_costs = IpDistanceCost
-
-# Weight of each cost (every cost function used should be given a weight.)
-scheduler_solver_cost_weights = IpDistanceCost:1.0
-
-# Constraints used in the solver
-scheduler_solver_constraints = ActiveHostConstraint, NumHostsPerInstanceConstraint, MaxDiskAllocationPerHostConstraint, MaxRamAllocationPerHostConstraint
-
 # Virtual-to-physical disk allocation ratio
-linearconstraint_disk_allocation_ratio = 1.5
+disk_allocation_ratio = 1.0
 
 # Virtual-to-physical ram allocation ratio
-linearconstraint_ram_allocation_ratio = 1.5
+ram_allocation_ratio = 1.5
+
+# Keystone Cinder account username (string value)
+cinder_admin_user=<cinder username>
+
+# Keystone Cinder account password (string value)
+cinder_admin_password=<cinder password>
+
+# Keystone Cinder account tenant name (string value)
+cinder_admin_tenant_name=<cinder tenant name>
+
+# Complete public Identity API endpoint (string value)
+cinder_auth_uri=<the identity api endpoint, e.g. "http://controller:5000/v2.0">
+
+
+[solver_scheduler]
+
+# Default solver to use for the solver scheduler
+scheduler_host_solver = nova.scheduler.solvers.pluggable_hosts_pulp_solver.HostsPulpSolver
+
+# Cost functions to use in the linear solver
+scheduler_solver_costs = VolumeAffinityCost
+
+# Weight of each cost (every cost function used should be given a weight.)
+scheduler_solver_cost_weights = VolumeAffinityCost:1.0
+
+# Constraints used in the solver
+scheduler_solver_constraints = ActiveHostConstraint, NonTrivialSolutionConstraint, MaxDiskAllocationPerHostConstraint, MaxRamAllocationPerHostConstraint
+
 ```
 
-* Restart nova-scheduler and then do the followings as admin:
+* Restart nova-scheduler and then do the followings:
 
 * Create multiple volumes at different hosts
 
 * Run the following command to boot a new instance. (The id of a volume you want to use should be provided as scheduler hint.)
 ```
-nova boot --image=<image-id> --flavor=<flavor-id> --hint ip_distance_cost_volume_id_list=<volume-id> <server-name>
+nova boot --image=<image-id> --flavor=<flavor-id> --hint affinity_volume_id_list=<volume-id> <server-name>
 ```
 
 * The instance should be created at the same host as the chosen volume as long as the host is active and has enough resources.

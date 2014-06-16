@@ -87,6 +87,8 @@ cinder_auth_uri=<None>
 # The pluggable solver implementation to use. By default, a
 # reference solver implementation is included that models the
 # problem as a Linear Programming (LP) problem using PULP.
+# To use a fully functional (pluggable) solver, set the option as
+# "nova.scheduler.solvers.pluggable_hosts_pulp_solver.HostsPulpSolver"
 # (string value)
 scheduler_host_solver=nova.scheduler.solvers.pluggable_hosts_pulp_solver.HostsPulpSolver
 
