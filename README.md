@@ -3,10 +3,6 @@ Openstack Nova Solver Scheduler
 
 Solver Scheduler is an Openstack Nova Scheduler driver that provides a smarter, complex constraints optimization based resource scheduling in Nova.  It is a pluggable scheduler driver, that can leverage existing complex constraint solvers available in open source such as PULP, CVXOPT, Google OR-TOOLS, etc. It can be easily extended to add complex constraint models for various use cases, written using any of the available open source constraint solving frameworks. 
 
-Getting Started
----------------
-The project code has to be patched onto an existing installation of Openstack Nova, as it is a pluggable Nova scheduler driver.
-
 Key modules
 -----------
 
@@ -54,36 +50,76 @@ Requirements
 * coinor.pulp>=1.0.4
 
 Installation
----------------------------
+------------
 
-The Solver Scheduler Manger will allow you to manage the solver scheduler in your openstack installation.
+We provide 2 ways to install the solver-scheduler code. In this section, we will guide you through installing the solver scheduler with the minimum configuration for demo purpose. For instructions of configuring a fully functional solver-scheduler, please check out the next sections.  
 
 * **Note:**  
-    - This is an **alpha** version, which was tested on **Ubuntu 12.04** and **OpenStack Havana** only.
-    - It is recommended that a backup of the following files be kept before using this manager:  
-        /etc/nova/nova.conf  
-        nova/scheduler/host_manager.py  
+    - Make sure you have an existing installation of **Openstack Icehouse**.  
+    - The automatic installation scripts are of **alpha** version, which was tested on **Ubuntu 14.04** and **OpenStack Icehouse** only.
+    - We recommend that you Do backup at least the following files before installation, because they are to be overwritten or modified:  
+        $NOVA_CONFIG_PARENT_DIR/nova.conf  
+        $NOVA_PARENT_DIR/nova/scheduler/host_manager.py  
+        $NOVA_PARENT_DIR/nova/scheduler/manager.py  
+        $NOVA_PARENT_DIR/nova/volume/cinder.py  
+        (replace the $... with actual directory names.)  
 
-To install the manager, run:  
-```curl https://raw.github.com/CiscoSystems/nova-solver-scheduler/master/install_manager | sudo bash```
+* **Manual Installation**  
+    - Make sure you have performed backups properly.  
+    - Clone the repository to your local host where nova-scheduler is run.  
+    - Navigate to the local repository and copy the contents in 'nova' sub-directory to the corresponding places in existing nova, e.g.  
+      ```cp -r $LOCAL_REPOSITORY_DIR/nova $NOVA_PARENT_DIR```  
+      (replace the $... with actual directory name.)  
+    - Update the nova configuration file (e.g. /etc/nova/nova.conf) with the minimum option below. If the option already exists, modify its value, otherwise add it to the config file. Check the "Configurations" section below for a full configuration.  
+      ```
+      [DEFAULT]
+      ...
+      scheduler_driver=nova.scheduler.solver_scheduler.ConstraintSolverScheduler
+      ```  
+    - Restart the nova scheduler.  
+      ```service nova-scheduler restart```  
+    - Done. The nova-solver-scheduler should be working with a demo configuration.  
 
-To install solver scheduler with this manager, use the following command as root:  
-```
-solver-scheduler install
-```
-To manage the solver scheduler, use one of the following commands as root:  
-```
-solver-scheduler activate
-solver-scheduler deactivate
-solver-scheduler remove
-solver-scheduler update
-solver-scheduler help
-```
+    - To use the default nova scheduler after installation, you can just replace the option ```scheduler_driver``` to the original value in the nova configuration file, which is normally:  
+      ```scheduler_driver=nova.scheduler.filter_scheduler.FilterScheduler```  
+      It is not necessary to restore all the modified files if you decide not to use the solver scheduler, because the solver-scheduler code is supposed to be compatible with the default nova scheduler.  
 
-Configurations - Getting Started
---------------------------------
+* **Automatic Installation**  
+    - Make sure you have performed backups properly.  
+    - Clone the repository to your local host where nova-scheduler is run.  
+    - Navigate to the installation directory.  
+      ```cd ${LOCAL_REPOSITORY_DIR}/installation```  
+      (replace the $... with actual directory name.)  
+    - Run installation script.  
+      ```sudo bash ./install```  
+    - Done. The installation code should setup the solver-scheduler with the minimum option below. Check the "Configurations" section for a full configuration.  
+      ```
+      [DEFAULT]
+      ...
+      scheduler_driver=nova.scheduler.solver_scheduler.ConstraintSolverScheduler
+      ```  
 
-* This is a configuration sample for the solver-scheduler. Please add/modify these options in /etc/nova/nova.conf.
+    - To uninstall the solver-scheduler, navigate to the installation directory, and run the uninstallation script.  
+      ```
+      cd ${LOCAL_REPOSITORY_DIR}/installation
+      sudo bash ./uninstall
+      ```  
+      (replace the $... with actual directory name.)  
+
+* **Troubleshooting**
+    In case the automatic installation/uninstallation process is not complete, please check the followings:  
+    - Make sure your OpenStack version is Icehouse.  
+    - Check the variables in the beginning of the install/uninstall scripts. Your installation directories may be different from the default values we provide.  
+    - The installation code will automatically backup the related codes to:  
+      $NOVA_PARENT_DIR/nova/.solver-scheduler-installation-backup  
+      Please do not make changes to the backup if you do not have to. If you encounter problems during installation, you can always find the backup files in this directory.  
+    - The automatic uninstallation script can only work when you used automatic installation beforehand. If you installed manually, please also uninstall manually (though there is no need to actually "uninstall").  
+    - In case the automatic installation does not work, try to install manually.  
+
+Configurations
+--------------
+
+* This is a (default) configuration sample for the solver-scheduler. Please add/modify these options in /etc/nova/nova.conf.
 * Note:
     - Please carefully make sure that options in the configuration file are not duplicated. If an option name already exists, modify its value instead of adding a new one of the same name.
     - The module 'nova.scheduler.solvers.hosts_pulp_solver' is self-inclusive and non-pluggable for costs and constraints. Therefore, if the option 'scheduler_host_solver' is set to use this module, there is no need for additional costs/constraints configurations.
