@@ -67,6 +67,9 @@ We provide 2 ways to install the solver-scheduler code. In this section, we will
         $NOVA_PARENT_DIR/nova/volume/cinder.py  
         (replace the $... with actual directory names.)  
 
+* **Prerequisites**  
+    - Please install the python package: coinor.pulp >= 1.04
+
 * **Manual Installation**  
 
     - Make sure you have performed backups properly.  
