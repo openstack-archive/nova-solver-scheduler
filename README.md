@@ -391,7 +391,7 @@ scheduler_solver_constraints = ActiveHostConstraint, NonTrivialSolutionConstrain
 
 * Run the following command to boot a new instance. (The id of a volume you want to use should be provided as scheduler hint.)
 ```
-nova boot --image=<image-id> --flavor=<flavor-id> --hint affinity_volume_id_list=<volume-id> <server-name>
+nova boot --image=<image-id> --flavor=<flavor-id> --hint affinity_volume_id=<volume-id> <server-name>
 ```
 
 * The instance should be created at the same host as the chosen volume as long as the host is active and has enough resources.
