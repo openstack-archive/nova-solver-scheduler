@@ -90,7 +90,7 @@ if [ $? -ne 0 ] ; then
 fi
 
 echo "updating config file..."
-sed -i .uninstall.backup -e "/scheduler_driver *=/d" "${_NOVA_CONF_DIR}/${_NOVA_CONF_FILE}"
+sed -i.uninstall.backup -e "/scheduler_driver *=/d" "${_NOVA_CONF_DIR}/${_NOVA_CONF_FILE}"
 if [ $? -ne 0 ] ; then
     echo "Error in updating, aborted."
     echo "Recovering current files..."

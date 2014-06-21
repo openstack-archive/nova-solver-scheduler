@@ -52,7 +52,7 @@ Requirements
 Installation
 ------------
 
-We provide 2 ways to install the solver-scheduler code. In this section, we will guide you through installing the solver scheduler with the minimum configuration for demo purpose. For instructions of configuring a fully functional solver-scheduler, please check out the next sections.  
+We provide 2 ways to install the solver-scheduler code. In this section, we will guide you through installing the solver scheduler with the minimum configuration. For instructions of configuring a fully functional solver-scheduler, please check out the next sections.  
 
 * **Note:**  
 
@@ -68,7 +68,7 @@ We provide 2 ways to install the solver-scheduler code. In this section, we will
         (replace the $... with actual directory names.)  
 
 * **Prerequisites**  
-    - Please install the python package: coinor.pulp >= 1.04
+    - Please install the python package: coinor.pulp >= 1.0.4  
 
 * **Manual Installation**  
 
@@ -80,7 +80,7 @@ We provide 2 ways to install the solver-scheduler code. In this section, we will
       ```cp -r $LOCAL_REPOSITORY_DIR/nova $NOVA_PARENT_DIR```  
       (replace the $... with actual directory name.)  
 
-    - Update the nova configuration file (e.g. /etc/nova/nova.conf) with the minimum option below. If the option already exists, modify its value, otherwise add it to the config file. Check the "Configurations" section below for a full configuration.  
+    - Update the nova configuration file (e.g. /etc/nova/nova.conf) with the minimum option below. If the option already exists, modify its value, otherwise add it to the config file. Check the "Configurations" section below for a full configuration guide.  
       ```
       [DEFAULT]
       ...
@@ -92,35 +92,38 @@ We provide 2 ways to install the solver-scheduler code. In this section, we will
 
     - Done. The nova-solver-scheduler should be working with a demo configuration.  
 
-    - To use the default nova scheduler after installation, you can just replace the option ```scheduler_driver``` to the original value in the nova configuration file, which is normally: ```scheduler_driver=nova.scheduler.filter_scheduler.FilterScheduler```.  
-      It is not necessary to restore all the modified files if you decide not to use the solver scheduler, because the code is supposed to be compatible with the default nova scheduler.  
-
 * **Automatic Installation**  
 
     - Make sure you have performed backups properly.  
 
     - Clone the repository to your local host where nova-scheduler is run.  
 
-    - Navigate to the installation directory.  
-      ```cd $LOCAL_REPOSITORY_DIR/installation```  
+    - Navigate to the installation directory and run installation script.  
+      ```
+      cd $LOCAL_REPOSITORY_DIR/installation
+      sudo bash ./install.sh
+      ```  
       (replace the $... with actual directory name.)  
 
-    - Run installation script.  
-      ```sudo bash ./install```  
-
-    - Done. The installation code should setup the solver-scheduler with the minimum option below. Check the "Configurations" section for a full configuration.  
+    - Done. The installation code should setup the solver-scheduler with the minimum configuration below. Check the "Configurations" section for a full configuration guide.  
       ```
       [DEFAULT]
       ...
       scheduler_driver=nova.scheduler.solver_scheduler.ConstraintSolverScheduler
       ```  
 
-    - To uninstall the solver-scheduler, navigate to the installation directory, and run the uninstallation script.  
+* **Uninstallation**  
+
+    - If you need to switch to other scheduler, simply open the nova configuration file and edit the option ```scheduler_driver```  (the default: ```scheduler_driver=nova.scheduler.filter_scheduler.FilterScheduler```), then restart nova-scheduler.  
+
+    - There is no need to remove the solver-scheduler code after installation since it is supposed to be fully compatible with the default nova scheduler. However, in case you really want to restore the code, you can either do it manually with your backup, or use the uninstallation script provided in the installation directory.  
       ```
       cd $LOCAL_REPOSITORY_DIR/installation
-      sudo bash ./uninstall
+      sudo bash ./uninstall.sh
       ```  
       (replace the $... with actual directory name.)  
+
+    - Please remember to restart the nova-scheduler service everytime when changes are made in the code or config file.  
 
 * **Troubleshooting**  
 
@@ -128,7 +131,7 @@ We provide 2 ways to install the solver-scheduler code. In this section, we will
 
     - Make sure your OpenStack version is Icehouse.  
 
-    - Check the variables in the beginning of the install/uninstall scripts. Your installation directories may be different from the default values we provide.  
+    - Check the variables in the beginning of the install.sh/uninstall.sh scripts. Your installation directories may be different from the default values we provide.  
 
     - The installation code will automatically backup the related codes to:  
       $NOVA_PARENT_DIR/nova/.solver-scheduler-installation-backup  
@@ -273,14 +276,14 @@ Configuration Details
         ram_weight_multiplier = <a real number>
         ram_allocation_ratio = <a float value>
         ```  
-        Set the multiplier to negative number for balanced ram usage,  
+        set the multiplier to negative number for balanced ram usage,  
         set the multiplier to positive number for stacked ram usage.  
     
     - **VolumeAffinityCost**  
         Help to place instances at the same host as a specific volume, if possible.  
         In order to use this cost, you need to pass a hint to the scheduler on booting a server.  
         ```nova boot ... --hint affinity_volume_id=<id of the affinity volume> ...```  
-        You also need to have the following options set in the configuration.  
+        You also need to have the following options set in the '[DEFAULT]' section of the configuration.  
         ```
         cinder_admin_user=<cinder username>
         cinder_admin_password=<cinder password>
