@@ -17,6 +17,7 @@
 Linear constraints for scheduler linear constraint solvers
 """
 
+from nova.compute import api as compute
 from nova import loadables
 
 
