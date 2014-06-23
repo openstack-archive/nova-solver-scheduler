@@ -65,6 +65,8 @@ We provide 2 ways to install the solver-scheduler code. In this section, we will
         $NOVA_PARENT_DIR/nova/scheduler/host_manager.py  
         $NOVA_PARENT_DIR/nova/scheduler/filter_scheduler.py  
         $NOVA_PARENT_DIR/nova/volume/cinder.py  
+        $NOVA_PARENT_DIR/nova/tests/scheduler/fakes.py  
+        $NOVA_PARENT_DIR/nova/tests/scheduler/test_host_manager.py  
         (replace the $... with actual directory names.)  
 
 * **Prerequisites**  
