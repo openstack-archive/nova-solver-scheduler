@@ -63,7 +63,7 @@ class VolumeAffinityCost(solvercosts.BaseCost):
                 volume = None
                 volume_host = None
                 try:
-                    volume = volumecinder.cinderclient(schcontext).volumes.get(
+                    volume = volumecinder.cinderclient(context).volumes.get(
                                  volume_id)
                     if volume:
                         volume = volumecinder.cinderadminclient().volumes.get(
@@ -73,9 +73,9 @@ class VolumeAffinityCost(solvercosts.BaseCost):
                     LOG.debug(_("volume host: %s") % volume_host)
                 except client_exceptions.NotFound:
                     LOG.warning(
-                        _("volume with provided id ("%s") was not found")
+                        _("volume with provided id ('%s') was not found")
                         % volume_id)
-                except client_exception.Unauthorized:
+                except client_exceptions.Unauthorized:
                     LOG.warning(_("Failed to retrieve volume %s: unauthorized")
                         % volume_id)
                 except:
