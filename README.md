@@ -10,10 +10,6 @@ Key modules
 
     nova/scheduler/solver_scheduler.py
 
-* A patched version of host_manager module from the master Nova project, with a new method:
-
-    nova/scheduler/host_manager.py
-
 * The code includes a reference implementation of a solver that models the scheduling problem as a Linear Programming model, written using the PULP LP modeling language. It uses a PULP_CBC_CMD, which is a packaged constraint solver, included in the coinor-pulp python package.
 
     nova/scheduler/solvers/hosts_pulp_solver.py
@@ -62,11 +58,8 @@ We provide 2 ways to install the solver-scheduler code. In this section, we will
 
     - We recommend that you Do backup at least the following files before installation, because they are to be overwritten or modified:  
         $NOVA_CONFIG_PARENT_DIR/nova.conf  
-        $NOVA_PARENT_DIR/nova/scheduler/host_manager.py  
-        $NOVA_PARENT_DIR/nova/scheduler/filter_scheduler.py  
         $NOVA_PARENT_DIR/nova/volume/cinder.py  
         $NOVA_PARENT_DIR/nova/tests/scheduler/fakes.py  
-        $NOVA_PARENT_DIR/nova/tests/scheduler/test_host_manager.py  
         (replace the $... with actual directory names.)  
 
 * **Prerequisites**  
