@@ -22,20 +22,24 @@ A default solver implementation that uses PULP is included.
 
 from oslo.config import cfg
 
+from nova import exception
+from nova.openstack.common.gettextutils import _
 from nova.openstack.common import importutils
 from nova.openstack.common import log as logging
-from nova.openstack.common.gettextutils import _
+from nova.scheduler import driver
 from nova.scheduler import filter_scheduler
 from nova.scheduler import weights
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
 
-solver_opts = [cfg.StrOpt('scheduler_host_solver',
-  default='nova.scheduler.solvers.pluggable_hosts_pulp_solver.HostsPulpSolver',
-  help='The pluggable solver implementation to use. By default, a '
+solver_opts = [
+    cfg.StrOpt('scheduler_host_solver',
+        default='nova.scheduler.solvers.hosts_pulp_solver.HostsPulpSolver',
+        help='The pluggable solver implementation to use. By default, a '
               'reference solver implementation is included that models '
-              'the problem as a Linear Programming (LP) problem using PULP.'),]
+              'the problem as a Linear Programming (LP) problem using PULP.')
+]
 
 CONF.register_opts(solver_opts, group='solver_scheduler')
 
@@ -49,6 +53,76 @@ class ConstraintSolverScheduler(filter_scheduler.FilterScheduler):
         super(ConstraintSolverScheduler, self).__init__(*args, **kwargs)
         self.hosts_solver = importutils.import_object(
                 CONF.solver_scheduler.scheduler_host_solver)
+
+    def schedule_run_instance(self, context, request_spec,
+                              admin_password, injected_files,
+                              requested_networks, is_first_time,
+                              filter_properties, legacy_bdm_in_spec):
+        """This method is called from nova.compute.api to provision
+        an instance.  We first create a build plan (a list of WeightedHosts)
+        and then provision.
+
+        Returns a list of the instances created.
+        """
+        payload = dict(request_spec=request_spec)
+        self.notifier.info(context, 'scheduler.run_instance.start', payload)
+
+        instance_uuids = request_spec.get('instance_uuids')
+        LOG.info(_("Attempting to build %(num_instances)d instance(s) "
+                    "uuids: %(instance_uuids)s"),
+                  {'num_instances': len(instance_uuids),
+                   'instance_uuids': instance_uuids})
+        LOG.debug(_("Request Spec: %s") % request_spec)
+
+        # Stuff network requests into filter_properties
+        # NOTE (Xinyuan): currently for POC only.
+        filter_properties['requested_networks'] = requested_networks
+
+        weighed_hosts = self._schedule(context, request_spec,
+                                       filter_properties, instance_uuids)
+
+        # NOTE: Pop instance_uuids as individual creates do not need the
+        # set of uuids. Do not pop before here as the upper exception
+        # handler fo NoValidHost needs the uuid to set error state
+        instance_uuids = request_spec.pop('instance_uuids')
+
+        # NOTE(comstud): Make sure we do not pass this through.  It
+        # contains an instance of RpcContext that cannot be serialized.
+        filter_properties.pop('context', None)
+
+        for num, instance_uuid in enumerate(instance_uuids):
+            request_spec['instance_properties']['launch_index'] = num
+
+            try:
+                try:
+                    weighed_host = weighed_hosts.pop(0)
+                    LOG.info(_("Choosing host %(weighed_host)s "
+                                "for instance %(instance_uuid)s"),
+                              {'weighed_host': weighed_host,
+                               'instance_uuid': instance_uuid})
+                except IndexError:
+                    raise exception.NoValidHost(reason="")
+
+                self._provision_resource(context, weighed_host,
+                                         request_spec,
+                                         filter_properties,
+                                         requested_networks,
+                                         injected_files, admin_password,
+                                         is_first_time,
+                                         instance_uuid=instance_uuid,
+                                         legacy_bdm_in_spec=legacy_bdm_in_spec)
+            except Exception as ex:
+                # NOTE(vish): we don't reraise the exception here to make sure
+                #             that all instances in the request get set to
+                #             error properly
+                driver.handle_schedule_error(context, ex, instance_uuid,
+                                             request_spec)
+            # scrub retry host list in case we're scheduling multiple
+            # instances:
+            retry = filter_properties.get('retry', {})
+            retry['hosts'] = []
+
+        self.notifier.info(context, 'scheduler.run_instance.end', payload)
 
     def _schedule(self, context, request_spec, filter_properties,
                   instance_uuids=None):
@@ -88,7 +162,6 @@ class ConstraintSolverScheduler(filter_scheduler.FilterScheduler):
                                          update_group_hosts,
                                          instance_uuids)
 
-
     def _get_final_host_list(self, context, request_spec, filter_properties,
                   instance_properties, update_group_hosts=False,
                   instance_uuids=None):
@@ -100,19 +173,20 @@ class ConstraintSolverScheduler(filter_scheduler.FilterScheduler):
         # this returns a host iterator
         hosts = self._get_all_host_states(context)
         selected_hosts = []
-        hosts = self._get_hosts_stripping_ignored_and_forced(
+        hosts = self.host_manager.get_hosts_stripping_ignored_and_forced(
                                       hosts, filter_properties)
         list_hosts = list(hosts)
         host_instance_tuples_list = self.hosts_solver.host_solve(
-                                         list_hosts, instance_uuids,
-                                         request_spec, filter_properties)
+                                            list_hosts, instance_uuids,
+                                            request_spec, filter_properties)
+        LOG.debug(_("solver results: %(host_instance_list)s") %
+                    {"host_instance_list": host_instance_tuples_list})
         # NOTE(Yathi): Not using weights in solver scheduler,
         # but creating a list of WeighedHosts with a default weight of 1
         # to match the common method signatures of the
         # FilterScheduler class
         selected_hosts = [weights.WeighedHost(host, 1)
-                          for (host, instance) in
-                          host_instance_tuples_list]
+                            for (host, instance) in host_instance_tuples_list]
         for chosen_host in selected_hosts:
             # Update the host state after deducting the
             # resource used by the instance
@@ -120,73 +194,3 @@ class ConstraintSolverScheduler(filter_scheduler.FilterScheduler):
             if update_group_hosts is True:
                 filter_properties['group_hosts'].append(chosen_host.obj.host)
         return selected_hosts
-
-    def _get_hosts_stripping_ignored_and_forced(self, hosts,
-            filter_properties):
-        """Filter hosts by stripping any ignored hosts and
-           matching any forced hosts or nodes.
-        """
-
-        def _strip_ignore_hosts(host_map, hosts_to_ignore):
-            ignored_hosts = []
-            for host in hosts_to_ignore:
-                for (hostname, nodename) in host_map.keys():
-                    if host == hostname:
-                        del host_map[(hostname, nodename)]
-                        ignored_hosts.append(host)
-            ignored_hosts_str = ', '.join(ignored_hosts)
-            msg = _('Host filter ignoring hosts: %s')
-            LOG.audit(msg % ignored_hosts_str)
-
-        def _match_forced_hosts(host_map, hosts_to_force):
-            forced_hosts = []
-            for (hostname, nodename) in host_map.keys():
-                if hostname not in hosts_to_force:
-                    del host_map[(hostname, nodename)]
-                else:
-                    forced_hosts.append(hostname)
-            if host_map:
-                forced_hosts_str = ', '.join(forced_hosts)
-                msg = _('Host filter forcing available hosts to %s')
-            else:
-                forced_hosts_str = ', '.join(hosts_to_force)
-                msg = _("No hosts matched due to not matching "
-                        "'force_hosts' value of '%s'")
-            LOG.audit(msg % forced_hosts_str)
-
-        def _match_forced_nodes(host_map, nodes_to_force):
-            forced_nodes = []
-            for (hostname, nodename) in host_map.keys():
-                if nodename not in nodes_to_force:
-                    del host_map[(hostname, nodename)]
-                else:
-                    forced_nodes.append(nodename)
-            if host_map:
-                forced_nodes_str = ', '.join(forced_nodes)
-                msg = _('Host filter forcing available nodes to %s')
-            else:
-                forced_nodes_str = ', '.join(nodes_to_force)
-                msg = _("No nodes matched due to not matching "
-                        "'force_nodes' value of '%s'")
-            LOG.audit(msg % forced_nodes_str)
-
-        ignore_hosts = filter_properties.get('ignore_hosts', [])
-        force_hosts = filter_properties.get('force_hosts', [])
-        force_nodes = filter_properties.get('force_nodes', [])
-
-        if ignore_hosts or force_hosts or force_nodes:
-            # NOTE(deva): we can't assume "host" is unique because
-            #             one host may have many nodes.
-            name_to_cls_map = dict([((x.host, x.nodename), x) for x in hosts])
-            if ignore_hosts:
-                _strip_ignore_hosts(name_to_cls_map, ignore_hosts)
-                if not name_to_cls_map:
-                    return []
-            # NOTE(deva): allow force_hosts and force_nodes independently
-            if force_hosts:
-                _match_forced_hosts(name_to_cls_map, force_hosts)
-            if force_nodes:
-                _match_forced_nodes(name_to_cls_map, force_nodes)
-            hosts = name_to_cls_map.itervalues()
-
-        return hosts
