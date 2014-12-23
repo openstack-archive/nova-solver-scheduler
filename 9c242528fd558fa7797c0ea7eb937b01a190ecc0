@@ -1,0 +1,8 @@
+Verified+2: Jenkins
+Code-Review+2: Yathiraj Udupi <yudupi@cisco.com>
+Workflow+1: Yathiraj Udupi <yudupi@cisco.com>
+Submitted-by: Jenkins
+Submitted-at: Tue, 23 Dec 2014 23:36:52 +0000
+Reviewed-on: https://review.openstack.org/143745
+Project: stackforge/nova-solver-scheduler
+Branch: refs/heads/master
