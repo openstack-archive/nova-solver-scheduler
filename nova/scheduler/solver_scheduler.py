@@ -23,6 +23,7 @@ A default solver implementation that uses PULP is included.
 from oslo.config import cfg
 
 from nova.openstack.common import importutils
+from nova.openstack.common.gettextutils import _
 from nova.scheduler import filter_scheduler
 from nova.scheduler import weights
 
@@ -101,23 +102,17 @@ class ConstraintSolverScheduler(filter_scheduler.FilterScheduler):
         selected_hosts = []
         hosts = self._get_hosts_stripping_ignored_and_forced(
                                       hosts, filter_properties)
-        force_hosts = filter_properties.get('force_hosts', [])
-        force_nodes = filter_properties.get('force_nodes', [])
-        if force_hosts or force_nodes:
-            # NOTE(Yathi): Skipping the solver when forcing host or node
-            selected_hosts = list(hosts)
-        else:
-            list_hosts = list(hosts)
-            host_instance_tuples_list = self.hosts_solver.host_solve(
-                                             list_hosts, instance_uuids,
-                                             request_spec, filter_properties)
-            # NOTE(Yathi): Not using weights in solver scheduler,
-            # but creating a list of WeighedHosts with a default weight of 1
-            # to match the common method signatures of the
-            # FilterScheduler class
-            selected_hosts = [weights.WeighedHost(host, 1)
-                              for (host, instance) in
-                              host_instance_tuples_list]
+        list_hosts = list(hosts)
+        host_instance_tuples_list = self.hosts_solver.host_solve(
+                                         list_hosts, instance_uuids,
+                                         request_spec, filter_properties)
+        # NOTE(Yathi): Not using weights in solver scheduler,
+        # but creating a list of WeighedHosts with a default weight of 1
+        # to match the common method signatures of the
+        # FilterScheduler class
+        selected_hosts = [weights.WeighedHost(host, 1)
+                          for (host, instance) in
+                          host_instance_tuples_list]
         for chosen_host in selected_hosts:
             # Update the host state after deducting the
             # resource used by the instance

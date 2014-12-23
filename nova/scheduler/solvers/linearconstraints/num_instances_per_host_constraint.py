@@ -83,5 +83,5 @@ class NumInstancesPerHostConstraint(linearconstraints.BaseLinearConstraint):
         """
         num_instances = host_state.num_instances
         max_instances_allowed = CONF.max_instances_per_host
-        usable_instance_num = max_instances_allowed - num_instance
+        usable_instance_num = max_instances_allowed - num_instances
         return usable_instance_num
