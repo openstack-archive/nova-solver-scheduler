@@ -47,6 +47,11 @@ class BaseLinearConstraint(object):
         """Returns a list of operations."""
         raise NotImplementedError()
 
+    def update_prob_variable(self, variables, hosts, instance_uuids, request_spec,
+                        filter_properties, prob):
+        #Not necessary to be implemented by all the constraints
+        return prob
+
 class AffinityConstraint(BaseLinearConstraint):
     def __init__(self, variables, hosts, instance_uuids, request_spec, filter_properties):
         self.compute_api = compute.API()
