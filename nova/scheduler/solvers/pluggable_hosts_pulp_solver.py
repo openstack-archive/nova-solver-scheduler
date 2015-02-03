@@ -105,6 +105,9 @@ class HostsPulpSolver(scheduler_solver.BaseHostSolver):
                     "Costraint_Name_%s" % constraint_object.__class__.__name__
                     + "_No._%s" % i)
 
+            prob = constraint_object.update_prob_variable(variables, hosts, instance_uuids,
+                                            request_spec, filter_properties, prob)
+
         # The problem is solved using PULP's choice of Solver.
         prob.solve()
 
