@@ -23,33 +23,50 @@ from nova import loadables
 class BaseCost(object):
     """Base class for cost."""
 
-    def get_cost_matrix(self, hosts, instance_uuids, request_spec,
-                        filter_properties):
-        """Return the cost matrix. Implement this in a subclass."""
+    precedence = 0
+
+    def cost_multiplier(self):
+        """How weighted this cost should be.
+
+        Override this method in a subclass, so that the returned value is
+        read from a configuration option to permit operators specify a
+        multiplier for the cost.
+        """
+        return 1.0
+
+    def get_components(self, variables, hosts, filter_properties):
+        """Return the components of the cost."""
         raise NotImplementedError()
 
-    def normalize_cost_matrix(self, cost_matrix, lower_bound=0.0,
-                                upper_bound=1.0):
-        """Normalize the cost matrix. By default scale to [0,1]."""
-        if (lower_bound > upper_bound):
-            return None
-        cost_array = []
-        normalized_cost_matrix = list(cost_matrix)
-        for i in range(len(cost_matrix)):
-            for j in range(len(cost_matrix[i])):
-                cost_array.append(cost_matrix[i][j])
-        max_cost = max(cost_array)
-        min_cost = min(cost_array)
-        for i in range(len(normalized_cost_matrix)):
-            for j in range(len(normalized_cost_matrix[i])):
-                if max_cost == min_cost:
-                    normalized_cost_matrix[i][j] = (upper_bound
-                                                    + lower_bound) / 2
-                else:
-                    normalized_cost_matrix[i][j] = (lower_bound +
-                            (cost_matrix[i][j] - min_cost) * (upper_bound -
-                            lower_bound) / (max_cost - min_cost))
-        return normalized_cost_matrix
+
+class BaseLinearCost(BaseCost):
+    """Base class of LP cost."""
+
+    def __init__(self):
+        self.variables = []
+        self.coefficients = []
+
+    def _generate_components(self, variables, hosts, filter_properties):
+        # override in a sub class.
+        pass
+
+    def get_components(self, variables, hosts, filter_properties):
+        # deprecated currently, reserve for future use
+        self._generate_components(variables, hosts, filter_properties)
+        return (self.variables, self.coefficients)
+
+    def get_extended_cost_matrix(self, hosts, filter_properties):
+        raise NotImplementedError()
+
+    def get_init_costs(self, hosts, filter_properties):
+        x_cost_mat = self.get_extended_cost_matrix(hosts, filter_properties)
+        init_costs = [row[0] for row in x_cost_mat]
+        return init_costs
+
+    def get_cost_matrix(self, hosts, filter_properties):
+        x_cost_mat = self.get_extended_cost_matrix(hosts, filter_properties)
+        cost_matrix = [row[1:] for row in x_cost_mat]
+        return cost_matrix
 
 
 class CostHandler(loadables.BaseLoader):

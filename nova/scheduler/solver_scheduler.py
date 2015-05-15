@@ -22,11 +22,9 @@ A default solver implementation that uses PULP is included.
 
 from oslo.config import cfg
 
-from nova import exception
 from nova.openstack.common.gettextutils import _
 from nova.openstack.common import importutils
 from nova.openstack.common import log as logging
-from nova.scheduler import driver
 from nova.scheduler import filter_scheduler
 from nova.scheduler import weights
 
@@ -35,11 +33,9 @@ LOG = logging.getLogger(__name__)
 
 solver_opts = [
     cfg.StrOpt('scheduler_host_solver',
-        default='nova.scheduler.solvers'
-                '.pluggable_hosts_pulp_solver.HostsPulpSolver',
-        help='The pluggable solver implementation to use. By default, a '
-              'reference solver implementation is included that models '
-              'the problem as a Linear Programming (LP) problem using PULP.'),
+                default='nova.scheduler.solvers.fast_solver.FastSolver',
+                help='The pluggable solver implementation to use. By '
+                     'default, use the FastSolver.'),
 ]
 
 CONF.register_opts(solver_opts, group='solver_scheduler')
@@ -55,82 +51,11 @@ class ConstraintSolverScheduler(filter_scheduler.FilterScheduler):
         self.hosts_solver = importutils.import_object(
                 CONF.solver_scheduler.scheduler_host_solver)
 
-    def schedule_run_instance(self, context, request_spec,
-                              admin_password, injected_files,
-                              requested_networks, is_first_time,
-                              filter_properties, legacy_bdm_in_spec):
-        """This method is called from nova.compute.api to provision
-        an instance.  We first create a build plan (a list of WeightedHosts)
-        and then provision.
-
-        Returns a list of the instances created.
-        """
-        payload = dict(request_spec=request_spec)
-        self.notifier.info(context, 'scheduler.run_instance.start', payload)
-
-        instance_uuids = request_spec.get('instance_uuids')
-        LOG.info(_("Attempting to build %(num_instances)d instance(s) "
-                    "uuids: %(instance_uuids)s"),
-                  {'num_instances': len(instance_uuids),
-                   'instance_uuids': instance_uuids})
-        LOG.debug(_("Request Spec: %s") % request_spec)
-
-        # Stuff network requests into filter_properties
-        # NOTE (Xinyuan): currently for POC only.
-        filter_properties['requested_networks'] = requested_networks
-
-        weighed_hosts = self._schedule(context, request_spec,
-                                       filter_properties, instance_uuids)
-
-        # NOTE: Pop instance_uuids as individual creates do not need the
-        # set of uuids. Do not pop before here as the upper exception
-        # handler fo NoValidHost needs the uuid to set error state
-        instance_uuids = request_spec.pop('instance_uuids')
-
-        # NOTE(comstud): Make sure we do not pass this through.  It
-        # contains an instance of RpcContext that cannot be serialized.
-        filter_properties.pop('context', None)
-
-        for num, instance_uuid in enumerate(instance_uuids):
-            request_spec['instance_properties']['launch_index'] = num
-
-            try:
-                try:
-                    weighed_host = weighed_hosts.pop(0)
-                    LOG.info(_("Choosing host %(weighed_host)s "
-                                "for instance %(instance_uuid)s"),
-                              {'weighed_host': weighed_host,
-                               'instance_uuid': instance_uuid})
-                except IndexError:
-                    raise exception.NoValidHost(reason="")
-
-                self._provision_resource(context, weighed_host,
-                                         request_spec,
-                                         filter_properties,
-                                         requested_networks,
-                                         injected_files, admin_password,
-                                         is_first_time,
-                                         instance_uuid=instance_uuid,
-                                         legacy_bdm_in_spec=legacy_bdm_in_spec)
-            except Exception as ex:
-                # NOTE(vish): we don't reraise the exception here to make sure
-                #             that all instances in the request get set to
-                #             error properly
-                driver.handle_schedule_error(context, ex, instance_uuid,
-                                             request_spec)
-            # scrub retry host list in case we're scheduling multiple
-            # instances:
-            retry = filter_properties.get('retry', {})
-            retry['hosts'] = []
-
-        self.notifier.info(context, 'scheduler.run_instance.end', payload)
-
     def _schedule(self, context, request_spec, filter_properties,
                   instance_uuids=None):
         """Returns a list of hosts that meet the required specs,
         ordered by their fitness.
         """
-        elevated = context.elevated()
         instance_properties = request_spec['instance_properties']
         instance_type = request_spec.get("instance_type", None)
 
@@ -147,52 +72,57 @@ class ConstraintSolverScheduler(filter_scheduler.FilterScheduler):
             properties['uuid'] = instance_uuids[0]
         self._populate_retry(filter_properties, properties)
 
+        if instance_uuids:
+            num_instances = len(instance_uuids)
+        else:
+            num_instances = request_spec.get('num_instances', 1)
+
+        # initilize an empty key-value cache to be used in solver for internal
+        # temporary data storage
+        solver_cache = {}
+
         filter_properties.update({'context': context,
                                   'request_spec': request_spec,
                                   'config_options': config_options,
-                                  'instance_type': instance_type})
+                                  'instance_type': instance_type,
+                                  'num_instances': num_instances,
+                                  'instance_uuids': instance_uuids,
+                                  'solver_cache': solver_cache})
 
-        self.populate_filter_properties(request_spec,
-                                        filter_properties)
+        self.populate_filter_properties(request_spec, filter_properties)
 
-        # Note: Moving the host selection logic to a new method so that
+        # NOTE(Yathi): Moving the host selection logic to a new method so that
         # the subclasses can override the behavior.
-        return self._get_final_host_list(elevated, request_spec,
-                                         filter_properties,
-                                         instance_properties,
-                                         update_group_hosts,
-                                         instance_uuids)
+        selected_hosts = self._get_selected_hosts(context, filter_properties)
 
-    def _get_final_host_list(self, context, request_spec, filter_properties,
-                  instance_properties, update_group_hosts=False,
-                  instance_uuids=None):
-        """Returns the final list of hosts that meet the required specs for
+        # clear solver's memory after scheduling process
+        filter_properties.pop('solver_cache')
+
+        return selected_hosts
+
+    def _get_selected_hosts(self, context, filter_properties):
+        """Returns the list of hosts that meet the required specs for
         each instance in the list of instance_uuids.
          Here each instance in instance_uuids have the same requirement
          as specified by request_spec.
         """
+        elevated = context.elevated()
         # this returns a host iterator
-        hosts = self._get_all_host_states(context)
+        hosts = self._get_all_host_states(elevated)
         selected_hosts = []
         hosts = self.host_manager.get_hosts_stripping_ignored_and_forced(
                                       hosts, filter_properties)
 
         list_hosts = list(hosts)
-        host_instance_tuples_list = self.hosts_solver.host_solve(
-                                            list_hosts, instance_uuids,
-                                            request_spec, filter_properties)
-        LOG.debug(_("solver results: %(host_instance_list)s") %
-                    {"host_instance_list": host_instance_tuples_list})
+        host_instance_combinations = self.hosts_solver.solve(
+                                            list_hosts, filter_properties)
+        LOG.debug(_("solver results: %(host_instance_tuples_list)s") %
+                    {"host_instance_tuples_list": host_instance_combinations})
         # NOTE(Yathi): Not using weights in solver scheduler,
         # but creating a list of WeighedHosts with a default weight of 1
         # to match the common method signatures of the
         # FilterScheduler class
         selected_hosts = [weights.WeighedHost(host, 1)
-                            for (host, instance) in host_instance_tuples_list]
-        for chosen_host in selected_hosts:
-            # Update the host state after deducting the
-            # resource used by the instance
-            chosen_host.obj.consume_from_instance(instance_properties)
-            if update_group_hosts is True:
-                filter_properties['group_hosts'].add(chosen_host.obj.host)
+                            for (host, instance) in host_instance_combinations]
+
         return selected_hosts

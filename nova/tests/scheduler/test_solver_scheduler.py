@@ -28,7 +28,8 @@ from nova.scheduler import driver
 from nova.scheduler import host_manager
 from nova.scheduler import solver_scheduler
 from nova.scheduler import weights
-from nova.tests.scheduler import fakes
+from nova import solver_scheduler_exception
+from nova.tests.scheduler import solver_scheduler_fakes as fakes
 from nova.tests.scheduler import test_scheduler
 
 
@@ -50,6 +51,9 @@ class SolverSchedulerTestCase(test_scheduler.SchedulerTestCase):
     """Test case for Solver Scheduler."""
 
     driver_cls = solver_scheduler.ConstraintSolverScheduler
+
+    def setUp(self):
+        super(SolverSchedulerTestCase, self).setUp()
 
     def test_run_instance_no_hosts(self):
 
@@ -167,6 +171,7 @@ class SolverSchedulerTestCase(test_scheduler.SchedulerTestCase):
         """Make sure there's nothing glaringly wrong with _schedule()
         by doing a happy day pass through.
         """
+        self.flags(scheduler_solver_constraints=[], group='solver_scheduler')
 
         sched = fakes.FakeSolverScheduler()
         fake_context = context.RequestContext('user', 'project',
@@ -218,8 +223,11 @@ class SolverSchedulerTestCase(test_scheduler.SchedulerTestCase):
 
         with mock.patch.object(db, 'compute_node_get_all') as get_all:
             get_all.return_value = []
-            sched._schedule(self.context, request_spec,
-                            filter_properties=filter_properties)
+            try:
+                sched._schedule(self.context, request_spec,
+                                filter_properties=filter_properties)
+            except solver_scheduler_exception.SolverFailed:
+                pass
             get_all.assert_called_once_with(mock.ANY)
             # should not have retry info in the populated filter properties:
             self.assertFalse("retry" in filter_properties)
@@ -235,8 +243,11 @@ class SolverSchedulerTestCase(test_scheduler.SchedulerTestCase):
 
         with mock.patch.object(db, 'compute_node_get_all') as get_all:
             get_all.return_value = []
-            sched._schedule(self.context, request_spec,
-                            filter_properties=filter_properties)
+            try:
+                sched._schedule(self.context, request_spec,
+                                filter_properties=filter_properties)
+            except solver_scheduler_exception.SolverFailed:
+                pass
             get_all.assert_called_once_with(mock.ANY)
             num_attempts = filter_properties['retry']['num_attempts']
             self.assertEqual(1, num_attempts)
@@ -254,8 +265,11 @@ class SolverSchedulerTestCase(test_scheduler.SchedulerTestCase):
 
         with mock.patch.object(db, 'compute_node_get_all') as get_all:
             get_all.return_value = []
-            sched._schedule(self.context, request_spec,
-                            filter_properties=filter_properties)
+            try:
+                sched._schedule(self.context, request_spec,
+                                filter_properties=filter_properties)
+            except solver_scheduler_exception.SolverFailed:
+                pass
             get_all.assert_called_once_with(mock.ANY)
             num_attempts = filter_properties['retry']['num_attempts']
             self.assertEqual(2, num_attempts)
@@ -287,7 +301,7 @@ class SolverSchedulerTestCase(test_scheduler.SchedulerTestCase):
     def test_schedule_chooses_best_host(self):
         """The host with the highest free_ram_mb will be chosen!
         """
-
+        self.flags(scheduler_solver_constraints=[], group='solver_scheduler')
         self.flags(ram_weight_multiplier=1)
 
         sched = fakes.FakeSolverScheduler()
@@ -315,7 +329,8 @@ class SolverSchedulerTestCase(test_scheduler.SchedulerTestCase):
                                 'ephemeral_gb': 0,
                                 'vcpus': 1,
                                 'os_type': 'Linux'}
-        request_spec = dict(instance_properties=instance_properties)
+        request_spec = dict(instance_properties=instance_properties,
+                            instance_type={'memory_mb': 512})
         filter_properties = {}
 
         with mock.patch.object(db, 'compute_node_get_all') as get_all:
@@ -335,6 +350,7 @@ class SolverSchedulerTestCase(test_scheduler.SchedulerTestCase):
         Similar to the _schedule tests, this just does a happy path test to
         ensure there is nothing glaringly wrong.
         """
+        self.flags(scheduler_solver_constraints=[], group='solver_scheduler')
 
         sched = fakes.FakeSolverScheduler()
         fake_context = context.RequestContext('user', 'project',

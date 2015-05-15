@@ -17,73 +17,73 @@
 Scheduler host constraint solvers
 """
 
-from nova.scheduler.solvers import costs
-from nova.scheduler.solvers import linearconstraints
-
 from oslo.config import cfg
 
-scheduler_solver_costs_opt = cfg.ListOpt(
-        'scheduler_solver_costs',
-        default=['RamCost'],
-        help='Which cost matrices to use in the scheduler solver.')
+from nova.scheduler.solvers import constraints
+from nova.scheduler.solvers import costs
+from nova import solver_scheduler_exception as exception
 
-# (xinyuan) This option should be changed to DictOpt type
-# when bug #1276859 is fixed.
-scheduler_solver_cost_weights_opt = cfg.ListOpt(
-        'scheduler_solver_cost_weights',
-        default=['RamCost:1.0'],
-        help='Assign weight for each cost')
-
-scheduler_solver_constraints_opt = cfg.ListOpt(
-        'scheduler_solver_constraints',
-        default=[],
-        help='Which constraints to use in scheduler solver')
+scheduler_solver_opts = [
+        cfg.ListOpt('scheduler_solver_costs',
+                    default=['RamCost'],
+                    help='Which cost matrices to use in the '
+                         'scheduler solver.'),
+        cfg.ListOpt('scheduler_solver_constraints',
+                    default=['ActiveHostsConstraint'],
+                    help='Which constraints to use in scheduler solver'),
+]
 
 CONF = cfg.CONF
-CONF.register_opt(scheduler_solver_costs_opt, group='solver_scheduler')
-CONF.register_opt(scheduler_solver_cost_weights_opt, group='solver_scheduler')
-CONF.register_opt(scheduler_solver_constraints_opt, group='solver_scheduler')
-SOLVER_CONF = CONF.solver_scheduler
+CONF.register_opts(scheduler_solver_opts, group='solver_scheduler')
 
 
 class BaseHostSolver(object):
     """Base class for host constraint solvers."""
 
+    def __init__(self):
+        super(BaseHostSolver, self).__init__()
+
     def _get_cost_classes(self):
         """Get cost classes from configuration."""
         cost_classes = []
+        bad_cost_names = []
         cost_handler = costs.CostHandler()
         all_cost_classes = cost_handler.get_all_classes()
-        expected_costs = SOLVER_CONF.scheduler_solver_costs
-        for cost in all_cost_classes:
-            if cost.__name__ in expected_costs:
-                cost_classes.append(cost)
+        all_cost_names = [c.__name__ for c in all_cost_classes]
+        expected_costs = CONF.solver_scheduler.scheduler_solver_costs
+        for cost in expected_costs:
+            if cost in all_cost_names:
+                cost_classes.append(all_cost_classes[
+                                                all_cost_names.index(cost)])
+            else:
+                bad_cost_names.append(cost)
+        if bad_cost_names:
+            msg = ", ".join(bad_cost_names)
+            raise exception.SchedulerSolverCostNotFound(cost_name=msg)
         return cost_classes
 
     def _get_constraint_classes(self):
         """Get constraint classes from configuration."""
         constraint_classes = []
-        constraint_handler = linearconstraints.LinearConstraintHandler()
+        bad_constraint_names = []
+        constraint_handler = constraints.ConstraintHandler()
         all_constraint_classes = constraint_handler.get_all_classes()
-        expected_constraints = SOLVER_CONF.scheduler_solver_constraints
-        for constraint in all_constraint_classes:
-            if constraint.__name__ in expected_constraints:
-                constraint_classes.append(constraint)
+        all_constraint_names = [c.__name__ for c in all_constraint_classes]
+        expected_constraints = (
+                CONF.solver_scheduler.scheduler_solver_constraints)
+        for constraint in expected_constraints:
+            if constraint in all_constraint_names:
+                constraint_classes.append(all_constraint_classes[
+                                    all_constraint_names.index(constraint)])
+            else:
+                bad_constraint_names.append(constraint)
+        if bad_constraint_names:
+            msg = ", ".join(bad_constraint_names)
+            raise exception.SchedulerSolverConstraintNotFound(
+                                                        constraint_name=msg)
         return constraint_classes
 
-    def _get_cost_weights(self):
-        """Get cost weights from configuration."""
-        cost_weights = {}
-        # (xinyuan) This is a temporary workaround for bug #1276859,
-        # need to wait until DictOpt is supported by config sample generator.
-        weights_str_list = SOLVER_CONF.scheduler_solver_cost_weights
-        for weight_str in weights_str_list:
-            (key, sep, val) = weight_str.partition(':')
-            cost_weights[str(key)] = float(val)
-        return cost_weights
-
-    def host_solve(self, hosts, instance_uuids, request_spec,
-                   filter_properties):
+    def solve(self, hosts, filter_properties):
         """Return the list of host-instance tuples after
            solving the constraints.
            Implement this in a subclass.
