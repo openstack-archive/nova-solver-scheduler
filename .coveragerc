@@ -1,0 +1,7 @@
+[run]
+branch = True
+source = nova_solverscheduler
+omit = nova_solverscheduler/openstack/*
+
+[report]
+ignore-errors = True
