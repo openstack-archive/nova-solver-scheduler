@@ -1,4 +1,14 @@
-# Openstack Nova Solver Scheduler
+===============================
+OpenStack Nova Solver Scheduler
+===============================
+
+A new OpenStack Nova scheduler driver based on constraints-based optimization
+solvers.
+
+* Free software: Apache license
+* Source: http://git.openstack.org/cgit/stackforge/nova-solver-scheduler
+* Bugs: https://bugs.launchpad.net/nova-solver-scheduler 
+* Blueprints: https://blueprints.launchpad.net/nova-solver-scheduler
 
 ## Overview  
 
