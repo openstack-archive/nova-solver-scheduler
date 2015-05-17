@@ -35,8 +35,8 @@ In order to enable nova-solver-scheduler, we need to have the following minimal 
 ```
 [DEFAULT]
 ... (other options)
-scheduler_driver=nova.scheduler.solver_scheduler.ConstraintSolverScheduler
-scheduler_host_manager=nova.scheduler.solver_scheduler_host_manager.SolverSchedulerHostManager
+scheduler_driver=nova_solverscheduler.scheduler.solver_scheduler.ConstraintSolverScheduler
+scheduler_host_manager=nova_solverscheduler.scheduler.solver_scheduler_host_manager.SolverSchedulerHostManager
 ```  
 
 ## Solvers  
@@ -47,7 +47,7 @@ The following option in the "[solver_scheduler]" section of nova config should b
 
 ```
 [solver_scheduler]
-scheduler_host_solver=nova.scheduler.solvers.fast_solver.FastSolver
+scheduler_host_solver=nova_solverscheduler.scheduler.solvers.fast_solver.FastSolver
 ```  
 
 ## Costs and Constraints  

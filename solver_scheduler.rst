@@ -48,7 +48,7 @@ Solvers
 -------
 
 All Solver implementations will be in the module
-(:mod:`nova.scheduler.solvers`). A solver implementation should be a
+(:mod:`nova_solverscheduler.scheduler.solvers`). A solver implementation should be a
 subclass of ``solvers.BaseHostSolver`` and they implement the ``host_solve``
 method. This method returns a list of host-instance tuples after solving
 the constraints optimization problem.
@@ -124,11 +124,11 @@ under the ``[solver_scheduler]`` namespace:
 
 `The Solver Scheduler driver to use (required):`
 
-``scheduler_driver=nova.scheduler.solver_scheduler.ConstraintSolverScheduler``
+``scheduler_driver=nova_solverscheduler.scheduler.solver_scheduler.ConstraintSolverScheduler``
 
 `The Solver implementation to use:`
 
-``scheduler_host_solver=nova.scheduler.solvers.hosts_pulp_solver.HostsPulpSolver``
+``scheduler_host_solver=nova_solverscheduler.scheduler.solvers.hosts_pulp_solver.HostsPulpSolver``
 
 When using the default provided Solver implementation |HostsPulpSolver|, the
 following default values of these settings can be modified:
@@ -149,4 +149,4 @@ to spreading:`
 
 ``ram_allocation_ratio=1.5``
 
-.. |HostsPulpSolver| replace:: :class:`HostsPulpSolver <nova.scheduler.solvers.hosts_pulp_solver.HostsPulpSolver>`
+.. |HostsPulpSolver| replace:: :class:`HostsPulpSolver <nova_solverscheduler.scheduler.solvers.hosts_pulp_solver.HostsPulpSolver>`
