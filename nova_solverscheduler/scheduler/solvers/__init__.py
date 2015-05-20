@@ -17,7 +17,7 @@
 Scheduler host constraint solvers
 """
 
-from oslo.config import cfg
+from oslo_config import cfg
 
 from nova_solverscheduler.scheduler.solvers import constraints
 from nova_solverscheduler.scheduler.solvers import costs
