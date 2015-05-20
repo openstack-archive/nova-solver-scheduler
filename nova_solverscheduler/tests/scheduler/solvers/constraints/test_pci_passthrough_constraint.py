@@ -15,7 +15,7 @@
 
 import mock
 
-from nova.pci import pci_stats
+from nova.pci import stats as pci_stats
 from nova import test
 from nova_solverscheduler.scheduler.solvers.constraints \
         import pci_passthrough_constraint
@@ -45,8 +45,8 @@ class TestPciPassthroughConstraint(test.NoDBTestCase):
                 {'pci_stats': pci_stats.PciDeviceStats()})
         self.fake_hosts = [host1, host2, host3]
 
-    @mock.patch('nova.pci.pci_stats.PciDeviceStats.support_requests')
-    @mock.patch('nova.pci.pci_stats.PciDeviceStats.apply_requests')
+    @mock.patch('nova.pci.stats.PciDeviceStats.support_requests')
+    @mock.patch('nova.pci.stats.PciDeviceStats.apply_requests')
     def test_get_constraint_matrix(self, apl_reqs, spt_reqs):
         spt_reqs.side_effect = [True, False] + [False] + [True, True, False]
         expected_cons_mat = [
