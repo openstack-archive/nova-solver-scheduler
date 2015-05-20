@@ -62,3 +62,4 @@ class TestAggregateRamConstraint(test.NoDBTestCase):
             [False, False]]
         cons_mat = self.constraint_cls().get_constraint_matrix(
                     self.fake_hosts, self.fake_filter_properties)
+        self.assertEqual(expected_cons_mat, cons_mat)
