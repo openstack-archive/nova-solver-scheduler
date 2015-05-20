@@ -16,14 +16,22 @@
 Fakes For Scheduler tests.
 """
 
-import mox
-
 from nova.compute import vm_states
 from nova import db
-from nova.openstack.common import jsonutils
+from nova import objects
 from nova_solverscheduler.scheduler import solver_scheduler
 from nova_solverscheduler.scheduler import solver_scheduler_host_manager
 
+
+NUMA_TOPOLOGY = objects.NUMATopology(
+                           cells=[objects.NUMACell(
+                                      id=0, cpuset=set([1, 2]), memory=512,
+                               cpu_usage=0, memory_usage=0, mempages=[],
+                               siblings=[], pinned_cpus=set([])),
+                                  objects.NUMACell(
+                                      id=1, cpuset=set([3, 4]), memory=512,
+                                cpu_usage=0, memory_usage=0, mempages=[],
+                               siblings=[], pinned_cpus=set([]))])
 
 COMPUTE_NODES = [
         dict(id=1, local_gb=1024, memory_mb=1024, vcpus=1,
@@ -54,119 +62,43 @@ COMPUTE_NODES = [
         dict(id=5, local_gb=1024, memory_mb=1024, vcpus=1, service=None),
 ]
 
-COMPUTE_NODES_METRICS = [
-        dict(id=1, local_gb=1024, memory_mb=1024, vcpus=1,
-             disk_available_least=512, free_ram_mb=512, vcpus_used=1,
-             free_disk_gb=512, local_gb_used=0, updated_at=None,
-             service=dict(host='host1', disabled=False),
-             hypervisor_hostname='node1', host_ip='127.0.0.1',
-             hypervisor_version=0,
-             metrics=jsonutils.dumps([{'name': 'foo',
-                                       'value': 512,
-                                       'timestamp': None,
-                                       'source': 'host1'
-                                      },
-                                      {'name': 'bar',
-                                       'value': 1.0,
-                                       'timestamp': None,
-                                       'source': 'host1'
-                                      },
-                                     ])),
-        dict(id=2, local_gb=2048, memory_mb=2048, vcpus=2,
-             disk_available_least=1024, free_ram_mb=1024, vcpus_used=2,
-             free_disk_gb=1024, local_gb_used=0, updated_at=None,
-             service=dict(host='host2', disabled=True),
-             hypervisor_hostname='node2', host_ip='127.0.0.1',
-             hypervisor_version=0,
-             metrics=jsonutils.dumps([{'name': 'foo',
-                                       'value': 1024,
-                                       'timestamp': None,
-                                       'source': 'host2'
-                                      },
-                                      {'name': 'bar',
-                                       'value': 2.0,
-                                       'timestamp': None,
-                                       'source': 'host2'
-                                      },
-                                     ])),
-        dict(id=3, local_gb=4096, memory_mb=4096, vcpus=4,
-             disk_available_least=3072, free_ram_mb=3072, vcpus_used=1,
-             free_disk_gb=3072, local_gb_used=0, updated_at=None,
-             service=dict(host='host3', disabled=False),
-             hypervisor_hostname='node3', host_ip='127.0.0.1',
-             hypervisor_version=0,
-             metrics=jsonutils.dumps([{'name': 'foo',
-                                       'value': 3072,
-                                       'timestamp': None,
-                                       'source': 'host3'
-                                      },
-                                      {'name': 'bar',
-                                       'value': 1.0,
-                                       'timestamp': None,
-                                       'source': 'host3'
-                                      },
-                                     ])),
-        dict(id=4, local_gb=8192, memory_mb=8192, vcpus=8,
-             disk_available_least=8192, free_ram_mb=8192, vcpus_used=0,
-             free_disk_gb=8192, local_gb_used=0, updated_at=None,
-             service=dict(host='host4', disabled=False),
-             hypervisor_hostname='node4', host_ip='127.0.0.1',
-             hypervisor_version=0,
-             metrics=jsonutils.dumps([{'name': 'foo',
-                                       'value': 8192,
-                                       'timestamp': None,
-                                       'source': 'host4'
-                                      },
-                                      {'name': 'bar',
-                                       'value': 0,
-                                       'timestamp': None,
-                                       'source': 'host4'
-                                      },
-                                     ])),
-        dict(id=5, local_gb=768, memory_mb=768, vcpus=8,
-             disk_available_least=768, free_ram_mb=768, vcpus_used=0,
-             free_disk_gb=768, local_gb_used=0, updated_at=None,
-             service=dict(host='host5', disabled=False),
-             hypervisor_hostname='node5', host_ip='127.0.0.1',
-             hypervisor_version=0,
-             metrics=jsonutils.dumps([{'name': 'foo',
-                                       'value': 768,
-                                       'timestamp': None,
-                                       'source': 'host5'
-                                      },
-                                      {'name': 'bar',
-                                       'value': 0,
-                                       'timestamp': None,
-                                       'source': 'host5'
-                                      },
-                                      {'name': 'zot',
-                                       'value': 1,
-                                       'timestamp': None,
-                                       'source': 'host5'
-                                      },
-                                     ])),
-        dict(id=6, local_gb=2048, memory_mb=2048, vcpus=8,
-             disk_available_least=2048, free_ram_mb=2048, vcpus_used=0,
-             free_disk_gb=2048, local_gb_used=0, updated_at=None,
-             service=dict(host='host6', disabled=False),
-             hypervisor_hostname='node6', host_ip='127.0.0.1',
-             hypervisor_version=0,
-             metrics=jsonutils.dumps([{'name': 'foo',
-                                       'value': 2048,
-                                       'timestamp': None,
-                                       'source': 'host6'
-                                      },
-                                      {'name': 'bar',
-                                       'value': 0,
-                                       'timestamp': None,
-                                       'source': 'host6'
-                                      },
-                                      {'name': 'zot',
-                                       'value': 2,
-                                       'timestamp': None,
-                                       'source': 'host6'
-                                      },
-                                     ])),
+COMPUTE_NODES_OBJ = [
+        objects.ComputeNode(
+            id=1, local_gb=1024, memory_mb=1024, vcpus=1,
+            disk_available_least=None, free_ram_mb=512, vcpus_used=1,
+            free_disk_gb=512, local_gb_used=0, updated_at=None,
+            host='host1', hypervisor_hostname='node1', host_ip='127.0.0.1',
+            hypervisor_version=0, numa_topology=None,
+            hypervisor_type='foo', supported_hv_specs=[],
+            pci_device_pools=None, cpu_info=None, stats=None, metrics=None),
+        objects.ComputeNode(
+            id=2, local_gb=2048, memory_mb=2048, vcpus=2,
+            disk_available_least=1024, free_ram_mb=1024, vcpus_used=2,
+            free_disk_gb=1024, local_gb_used=0, updated_at=None,
+            host='host2', hypervisor_hostname='node2', host_ip='127.0.0.1',
+            hypervisor_version=0, numa_topology=None,
+            hypervisor_type='foo', supported_hv_specs=[],
+            pci_device_pools=None, cpu_info=None, stats=None, metrics=None),
+        objects.ComputeNode(
+            id=3, local_gb=4096, memory_mb=4096, vcpus=4,
+            disk_available_least=3333, free_ram_mb=3072, vcpus_used=1,
+            free_disk_gb=3072, local_gb_used=0, updated_at=None,
+            host='host3', hypervisor_hostname='node3', host_ip='127.0.0.1',
+            hypervisor_version=0, numa_topology=NUMA_TOPOLOGY._to_json(),
+            hypervisor_type='foo', supported_hv_specs=[],
+            pci_device_pools=None, cpu_info=None, stats=None, metrics=None),
+        objects.ComputeNode(
+            id=4, local_gb=8192, memory_mb=8192, vcpus=8,
+            disk_available_least=8192, free_ram_mb=8192, vcpus_used=0,
+            free_disk_gb=8888, local_gb_used=0, updated_at=None,
+            host='host4', hypervisor_hostname='node4', host_ip='127.0.0.1',
+            hypervisor_version=0, numa_topology=None,
+            hypervisor_type='foo', supported_hv_specs=[],
+            pci_device_pools=None, cpu_info=None, stats=None, metrics=None),
+        # Broken entry
+        objects.ComputeNode(
+            id=5, local_gb=1024, memory_mb=1024, vcpus=1,
+            host='fake', hypervisor_hostname='fake-hyp'),
 ]
 
 INSTANCES = [
@@ -185,6 +117,18 @@ INSTANCES = [
         dict(root_gb=1024, ephemeral_gb=0, memory_mb=1024, vcpus=1,
              host='host5', node='node5'),
 ]
+
+SERVICES = [
+        objects.Service(host='host1', disabled=False),
+        objects.Service(host='host2', disabled=True),
+        objects.Service(host='host3', disabled=False),
+        objects.Service(host='host4', disabled=False),
+]
+
+
+def fake_nodes_dict2obj(compute_nodes_dict):
+  compute_nodes_obj = [objects.ComputeNode(node_dict) for node_dict
+                      in compute_nodes_dict]
 
 
 class FakeSolverScheduler(solver_scheduler.ConstraintSolverScheduler):
@@ -257,9 +201,3 @@ class FakeInstance(object):
 class FakeComputeAPI(object):
     def create_db_entry_for_new_instance(self, *args, **kwargs):
         pass
-
-
-def mox_host_manager_db_calls(mock, context):
-    mock.StubOutWithMock(db, 'compute_node_get_all')
-
-    db.compute_node_get_all(mox.IgnoreArg()).AndReturn(COMPUTE_NODES)

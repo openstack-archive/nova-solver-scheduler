@@ -15,8 +15,12 @@
 
 """Test case for solver scheduler RAM cost."""
 
+import mock
+
+from oslo_serialization import jsonutils
+
 from nova import context
-from nova.openstack.common.fixture import mockpatch
+from nova.scheduler import host_manager
 from nova import test
 from nova_solverscheduler.tests.scheduler import solver_scheduler_fakes \
         as fakes
@@ -28,17 +32,37 @@ class TestMetricsCost(test.NoDBTestCase):
     def setUp(self):
         super(TestMetricsCost, self).setUp()
         self.context = context.RequestContext('fake_usr', 'fake_proj')
-        self.useFixture(mockpatch.Patch('nova.db.compute_node_get_all',
-                return_value=fakes.COMPUTE_NODES_METRICS))
-        self.host_manager = fakes.FakeSolverSchedulerHostManager()
         self.cost_handler = costs.CostHandler()
         self.cost_classes = self.cost_handler.get_matching_classes(
                 ['nova_solverscheduler.scheduler.solvers.costs.metrics_cost.'
                 'MetricsCost'])
 
     def _get_all_hosts(self):
-        ctxt = context.get_admin_context()
-        return self.host_manager.get_all_host_states(ctxt)
+        def fake_metric(value):
+            return host_manager.MetricItem(value=value, timestamp='fake-time',
+                                           source='fake-source')
+
+        host1 = fakes.FakeSolverSchedulerHostState('host1', 'node1',
+                {'metrics': {'foo': fake_metric(512),
+                            'bar': fake_metric(1)}})
+        host2 = fakes.FakeSolverSchedulerHostState('host2', 'node2',
+                {'metrics': {'foo': fake_metric(1024),
+                            'bar': fake_metric(2)}})
+        host3 = fakes.FakeSolverSchedulerHostState('host3', 'node3',
+                {'metrics': {'foo': fake_metric(3072),
+                            'bar': fake_metric(1)}})
+        host4 = fakes.FakeSolverSchedulerHostState('host4', 'node4',
+                {'metrics': {'foo': fake_metric(8192),
+                            'bar': fake_metric(0)}})
+        host5 = fakes.FakeSolverSchedulerHostState('host5', 'node5',
+                {'metrics': {'foo': fake_metric(768),
+                            'bar': fake_metric(0),
+                            'zot': fake_metric(1)}})
+        host6 = fakes.FakeSolverSchedulerHostState('host6', 'node6',
+                {'metrics': {'foo': fake_metric(2048),
+                            'bar': fake_metric(0),
+                            'zot': fake_metric(2)}})
+        return [host1, host2, host3, host4, host5, host6]
 
     def _get_fake_cost_inputs(self):
         fake_hosts = self._get_all_hosts()

@@ -20,11 +20,11 @@ cost metrics. The solution is designed to work with pluggable solvers.
 A default solver implementation that uses PULP is included.
 """
 
-from oslo.config import cfg
+from oslo_config import cfg
+from oslo_log import log as logging
+from oslo_utils import importutils
 
-from nova.openstack.common.gettextutils import _
-from nova.openstack.common import importutils
-from nova.openstack.common import log as logging
+from nova.i18n import _
 from nova.scheduler import filter_scheduler
 from nova.scheduler import weights
 
@@ -60,9 +60,6 @@ class ConstraintSolverScheduler(filter_scheduler.FilterScheduler):
         instance_properties = request_spec['instance_properties']
         instance_type = request_spec.get("instance_type", None)
 
-        update_group_hosts = self._setup_instance_group(context,
-                filter_properties)
-
         config_options = self._get_configuration_options()
 
         # check retry policy.  Rather ugly use of instance_uuids[0]...
@@ -71,7 +68,6 @@ class ConstraintSolverScheduler(filter_scheduler.FilterScheduler):
         properties = instance_properties.copy()
         if instance_uuids:
             properties['uuid'] = instance_uuids[0]
-        self._populate_retry(filter_properties, properties)
 
         if instance_uuids:
             num_instances = len(instance_uuids)
