@@ -17,10 +17,10 @@ from pulp import constants
 from pulp import pulp
 from pulp import solvers as pulp_solver_classes
 
-from oslo.config import cfg
+from oslo_config import cfg
+from oslo_log import log as logging
 
-from nova.openstack.common.gettextutils import _
-from nova.openstack.common import log as logging
+from nova.i18n import _
 from nova_solverscheduler.scheduler import solvers as scheduler_solver
 
 pulp_solver_opts = [

@@ -15,7 +15,10 @@
 """
 Tests For SolverSchedulerHostManager
 """
-from nova.openstack.common import timeutils
+import mock
+
+from oslo_utils import timeutils
+
 from nova import test
 from nova_solverscheduler.scheduler import solver_scheduler_host_manager \
         as host_manager
@@ -24,7 +27,11 @@ from nova_solverscheduler.scheduler import solver_scheduler_host_manager \
 class SolverSchedulerHostManagerTestCase(test.NoDBTestCase):
     """Test case for HostManager class."""
 
-    def setUp(self):
+    @mock.patch.object(host_manager.SolverSchedulerHostManager,
+                        '_init_instance_info')
+    @mock.patch.object(host_manager.SolverSchedulerHostManager,
+                        '_init_aggregates')
+    def setUp(self, mock_init_agg, mock_init_inst):
         super(SolverSchedulerHostManagerTestCase, self).setUp()
         self.host_manager = host_manager.SolverSchedulerHostManager()
         self.fake_hosts = [host_manager.SolverSchedulerHostState(
