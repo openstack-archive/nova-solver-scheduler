@@ -48,7 +48,7 @@ class TestVcpuConstraint(test.NoDBTestCase):
                     self.fake_hosts, self.fake_filter_properties)
         self.assertEqual(expected_cons_mat, cons_mat)
 
-    def test_get_constraint_matrix(self):
+    def test_get_constraint_matrix_oversubscribe(self):
         self.flags(cpu_allocation_ratio=2.0)
         expected_cons_mat = [
             [True, True],
