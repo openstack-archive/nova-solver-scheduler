@@ -13,10 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from oslo.config import cfg
+from oslo_config import cfg
+from oslo_log import log as logging
 
-from nova.openstack.common.gettextutils import _
-from nova.openstack.common import log as logging
+from nova.i18n import _
 from nova_solverscheduler.scheduler.solvers import constraints
 
 LOG = logging.getLogger(__name__)

@@ -16,7 +16,6 @@
 """Test case for solver scheduler RAM cost."""
 
 from nova import context
-from nova.openstack.common.fixture import mockpatch
 from nova import test
 from nova_solverscheduler.scheduler.solvers import costs
 from nova_solverscheduler.scheduler.solvers.costs import ram_cost
@@ -28,16 +27,20 @@ class TestRamCost(test.NoDBTestCase):
     def setUp(self):
         super(TestRamCost, self).setUp()
         self.context = context.RequestContext('fake_usr', 'fake_proj')
-        self.useFixture(mockpatch.Patch('nova.db.compute_node_get_all',
-                return_value=fakes.COMPUTE_NODES[0:5]))
-        self.host_manager = fakes.FakeSolverSchedulerHostManager()
         self.cost_handler = costs.CostHandler()
         self.cost_classes = self.cost_handler.get_matching_classes(
             ['nova_solverscheduler.scheduler.solvers.costs.ram_cost.RamCost'])
 
     def _get_all_hosts(self):
-        ctxt = context.get_admin_context()
-        return self.host_manager.get_all_host_states(ctxt)
+        host1 = fakes.FakeSolverSchedulerHostState('host1', 'node1',
+                {'free_ram_mb': 512})
+        host2 = fakes.FakeSolverSchedulerHostState('host2', 'node2',
+                {'free_ram_mb': 1024})
+        host3 = fakes.FakeSolverSchedulerHostState('host3', 'node3',
+                {'free_ram_mb': 3072})
+        host4 = fakes.FakeSolverSchedulerHostState('host4', 'node4',
+                {'free_ram_mb': 8192})
+        return [host1, host2, host3, host4]
 
     def test_ram_cost_multiplier_1(self):
         self.flags(ram_cost_multiplier=0.5, group='solver_scheduler')

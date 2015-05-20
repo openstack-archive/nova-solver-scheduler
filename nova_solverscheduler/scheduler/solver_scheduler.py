@@ -20,11 +20,11 @@ cost metrics. The solution is designed to work with pluggable solvers.
 A default solver implementation that uses PULP is included.
 """
 
-from oslo.config import cfg
+from oslo_config import cfg
+from oslo_log import log as logging
+from oslo_utils import importutils
 
-from nova.openstack.common.gettextutils import _
-from nova.openstack.common import importutils
-from nova.openstack.common import log as logging
+from nova.i18n import _
 from nova.scheduler import filter_scheduler
 from nova.scheduler import weights
 
@@ -52,26 +52,50 @@ class ConstraintSolverScheduler(filter_scheduler.FilterScheduler):
         self.hosts_solver = importutils.import_object(
                 CONF.solver_scheduler.scheduler_host_solver)
 
-    def _schedule(self, context, request_spec, filter_properties,
-                  instance_uuids=None):
+    def _setup_instance_group(self, context, filter_properties):
+        """Update filter_properties with server group info.
+
+        :returns: True if filter_properties has been updated, False if not.
+        """
+        scheduler_hints = filter_properties.get('scheduler_hints') or {}
+        group_hint = scheduler_hints.get('group', None)
+        if not group_hint:
+            return False
+
+        group = objects.InstanceGroup.get_by_hint(context, group_hint)
+        policies = set(('anti-affinity', 'affinity'))
+        if not any((policy in policies) for policy in group.policies):
+            return False
+
+        if ('affinity' in group.policies and
+                not self._supports_affinity):
+            msg = _("ServerGroupAffinityConstraint not configured")
+            LOG.error(msg)
+            raise exception.NoValidHost(reason=msg)
+        if ('anti-affinity' in group.policies and
+                not self._supports_anti_affinity):
+            msg = _("ServerGroupAntiAffinityConstraint not configured")
+            LOG.error(msg)
+            raise exception.NoValidHost(reason=msg)
+
+        filter_properties.setdefault('group_hosts', set())
+        user_hosts = set(filter_properties['group_hosts'])
+        group_hosts = set(group.get_hosts(context))
+        filter_properties['group_hosts'] = user_hosts | group_hosts
+        filter_properties['group_policies'] = group.policies
+
+        return True
+
+    def _schedule(self, context, request_spec, filter_properties):
         """Returns a list of hosts that meet the required specs,
         ordered by their fitness.
         """
-        instance_properties = request_spec['instance_properties']
         instance_type = request_spec.get("instance_type", None)
+        instance_uuids = request_spec.get("instance_uuids", None)
 
-        update_group_hosts = self._setup_instance_group(context,
-                filter_properties)
+        self._setup_instance_group(context, filter_properties)
 
         config_options = self._get_configuration_options()
-
-        # check retry policy.  Rather ugly use of instance_uuids[0]...
-        # but if we've exceeded max retries... then we really only
-        # have a single instance.
-        properties = instance_properties.copy()
-        if instance_uuids:
-            properties['uuid'] = instance_uuids[0]
-        self._populate_retry(filter_properties, properties)
 
         if instance_uuids:
             num_instances = len(instance_uuids)

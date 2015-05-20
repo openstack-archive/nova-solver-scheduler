@@ -21,10 +21,10 @@ stacking, you can set the 'ram_cost_multiplier' option to a positive
 number and the cost has the opposite effect of the default.
 """
 
-from oslo.config import cfg
+from oslo_config import cfg
+from oslo_log import log as logging
 
-from nova.openstack.common.gettextutils import _
-from nova.openstack.common import log as logging
+from nova.i18n import _
 from nova_solverscheduler.scheduler.solvers import costs as solver_costs
 from nova_solverscheduler.scheduler.solvers.costs import utils
 
