@@ -10,6 +10,8 @@ solvers.
 * Bugs: https://bugs.launchpad.net/nova-solver-scheduler 
 * Blueprints: https://blueprints.launchpad.net/nova-solver-scheduler
 
+* This is the stable Kilo OpenStack compatible version branch.
+
 ## Overview  
 
 Solver Scheduler is an OpenStack Nova scheduler driver that provides smart, efficient, and optimization based compute resource scheduling in Nova. It is a pluggable scheduler driver, that can leverage existing constraint solvers available in open source such as PULP, CVXOPT, Google OR-TOOLS, etc. It can be easily extended to add complex constraint models for various use cases, and to solve complex scheduling problems with pulggable solving frameworks.  
