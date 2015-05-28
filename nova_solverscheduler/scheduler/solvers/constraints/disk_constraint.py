@@ -29,6 +29,9 @@ LOG = logging.getLogger(__name__)
 class DiskConstraint(constraints.BaseLinearConstraint):
     """Constraint of the maximum total disk demand acceptable on each host."""
 
+    def _get_disk_allocation_ratio(self, host_state, filter_properties):
+        return CONF.disk_allocation_ratio
+
     def get_constraint_matrix(self, hosts, filter_properties):
         num_hosts = len(hosts)
         num_instances = filter_properties.get('num_instances')
@@ -52,10 +55,12 @@ class DiskConstraint(constraints.BaseLinearConstraint):
             return constraint_matrix
 
         for i in xrange(num_hosts):
+            disk_allocation_ratio = self._get_disk_allocation_ratio(
+                                                hosts[i], filter_properties)
             # get usable disk
             free_disk_mb = hosts[i].free_disk_mb
             total_usable_disk_mb = hosts[i].total_usable_disk_gb * 1024
-            disk_mb_limit = total_usable_disk_mb * CONF.disk_allocation_ratio
+            disk_mb_limit = total_usable_disk_mb * disk_allocation_ratio
             used_disk_mb = total_usable_disk_mb - free_disk_mb
             usable_disk_mb = disk_mb_limit - used_disk_mb
 
