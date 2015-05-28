@@ -1,9 +1,9 @@
-.. cognitive documentation master file, created by
+.. nova_solverscheduler documentation master file, created by
    sphinx-quickstart on Tue Jul  9 22:26:36 2013.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to cognitive's documentation!
+Welcome to Nova Solver Scheduler's documentation!
 ========================================================
 
 Contents:
