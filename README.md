@@ -10,7 +10,7 @@ solvers.
 * Bugs: https://bugs.launchpad.net/nova-solver-scheduler 
 * Blueprints: https://blueprints.launchpad.net/nova-solver-scheduler
 
-* This is the stable Kilo OpenStack compatible version branch.
+* This is the stable Icehouse OpenStack compatible version branch.
 
 ## Overview  
 
