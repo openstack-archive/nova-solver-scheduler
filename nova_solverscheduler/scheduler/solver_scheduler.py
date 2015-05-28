@@ -65,14 +65,6 @@ class ConstraintSolverScheduler(filter_scheduler.FilterScheduler):
 
         config_options = self._get_configuration_options()
 
-        # check retry policy.  Rather ugly use of instance_uuids[0]...
-        # but if we've exceeded max retries... then we really only
-        # have a single instance.
-        properties = instance_properties.copy()
-        if instance_uuids:
-            properties['uuid'] = instance_uuids[0]
-        self._populate_retry(filter_properties, properties)
-
         if instance_uuids:
             num_instances = len(instance_uuids)
         else:
