@@ -19,15 +19,18 @@ Tests For Solver Scheduler.
 import contextlib
 import mock
 import mox
+import uuid
 
 from nova.compute import utils as compute_utils
 from nova.compute import vm_states
 from nova import context
 from nova import db
 from nova import exception
+from nova import objects
 from nova.scheduler import driver
 from nova.scheduler import host_manager
 from nova.scheduler import weights
+from nova.tests import fake_instance
 from nova.tests.scheduler import test_scheduler
 from nova_solverscheduler.scheduler import solver_scheduler
 from nova_solverscheduler import solver_scheduler_exception
@@ -151,6 +154,101 @@ class SolverSchedulerTestCase(test_scheduler.SchedulerTestCase):
             self.assertEqual(10, len(selected_hosts))
             for host in selected_hosts:
                 self.assertTrue(host is not None)
+
+    def _create_server_group(self, policy='anti-affinity'):
+        instance = fake_instance.fake_instance_obj(self.context,
+                params={'host': 'hostA'})
+
+        group = objects.InstanceGroup()
+        group.name = 'pele'
+        group.uuid = str(uuid.uuid4())
+        group.members = [instance.uuid]
+        group.policies = [policy]
+        return group
+
+    def _group_details_in_filter_properties(self, group, func='get_by_uuid',
+                                            hint=None, policy=None):
+        sched = fakes.FakeSolverScheduler()
+
+        filter_properties = {
+            'scheduler_hints': {
+                'group': hint,
+            },
+            'group_hosts': ['hostB'],
+        }
+
+        with contextlib.nested(
+            mock.patch.object(objects.InstanceGroup, func,
+                                return_value=group),
+            mock.patch.object(objects.InstanceGroup, 'get_hosts',
+                                return_value=['hostA']),
+        ) as (get_group, get_hosts):
+            sched._supports_anti_affinity = True
+            update_group_hosts = sched._setup_instance_group(self.context,
+                    filter_properties)
+            self.assertTrue(update_group_hosts)
+            self.assertEqual(set(['hostA', 'hostB']),
+                             filter_properties['group_hosts'])
+            self.assertEqual([policy], filter_properties['group_policies'])
+
+    def test_group_details_in_filter_properties(self):
+        self.flags(scheduler_solver_constraints=[
+                'ServerGroupAffinityConstraint',
+                'ServerGroupAntiAffinityConstraint'],
+                group='solver_scheduler')
+        for policy in ['affinity', 'anti-affinity']:
+            group = self._create_server_group(policy)
+            self._group_details_in_filter_properties(group, func='get_by_uuid',
+                                                     hint=group.uuid,
+                                                     policy=policy)
+
+    def _group_constraint_with_constraint_not_configured(self, policy):
+        wrong_constraint = {
+            'affinity': 'ServerGroupAntiAffinityConstraint',
+            'anti-affinity': 'ServerGroupAffinityConstraint',
+        }
+        self.flags(scheduler_solver_constraints=[wrong_constraint[policy]],
+                    group='solver_scheduler')
+        sched = fakes.FakeSolverScheduler()
+
+        instance = fake_instance.fake_instance_obj(self.context,
+                params={'host': 'hostA'})
+
+        group = objects.InstanceGroup()
+        group.uuid = str(uuid.uuid4())
+        group.members = [instance.uuid]
+        group.policies = [policy]
+
+        filter_properties = {
+            'scheduler_hints': {
+                'group': group.uuid,
+            },
+        }
+
+        with contextlib.nested(
+            mock.patch.object(objects.InstanceGroup, 'get_by_uuid',
+                              return_value=group),
+            mock.patch.object(objects.InstanceGroup, 'get_hosts',
+                              return_value=['hostA']),
+        ) as (get_group, get_hosts):
+            self.assertRaises(exception.NoValidHost,
+                              sched._setup_instance_group, self.context,
+                              filter_properties)
+
+    def test_group_constraint_with_constraint_not_configured(self):
+        policies = ['anti-affinity', 'affinity']
+        for policy in policies:
+            self._group_constraint_with_constraint_not_configured(policy)
+
+    def test_group_uuid_details_in_filter_properties(self):
+        group = self._create_server_group()
+        self._group_details_in_filter_properties(group, 'get_by_uuid',
+                                                 group.uuid, 'anti-affinity')
+
+    def test_group_name_details_in_filter_properties(self):
+        group = self._create_server_group()
+        self._group_details_in_filter_properties(group, 'get_by_name',
+                                                 group.name, 'anti-affinity')
 
     def test_schedule_chooses_best_host(self):
         """The host with the highest free_ram_mb will be chosen!

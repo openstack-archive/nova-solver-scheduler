@@ -22,11 +22,15 @@ A default solver implementation that uses PULP is included.
 
 from oslo.config import cfg
 
+from nova import exception
+from nova import objects
 from nova.openstack.common.gettextutils import _
 from nova.openstack.common import importutils
 from nova.openstack.common import log as logging
 from nova.scheduler import filter_scheduler
 from nova.scheduler import weights
+from nova_solverscheduler.scheduler.solvers.constraints import utils \
+        as constraint_utils
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
@@ -51,6 +55,44 @@ class ConstraintSolverScheduler(filter_scheduler.FilterScheduler):
         super(ConstraintSolverScheduler, self).__init__(*args, **kwargs)
         self.hosts_solver = importutils.import_object(
                 CONF.solver_scheduler.scheduler_host_solver)
+        self._supports_affinity = constraint_utils.validate_constraint(
+                                            'ServerGroupAffinityConstraint')
+        self._supports_anti_affinity = constraint_utils.validate_constraint(
+                                        'ServerGroupAntiAffinityConstraint')
+
+    def _setup_instance_group(self, context, filter_properties):
+        """Update filter_properties with server group info.
+
+        :returns: True if filter_properties has been updated, False if not.
+        """
+        scheduler_hints = filter_properties.get('scheduler_hints') or {}
+        group_hint = scheduler_hints.get('group', None)
+        if not group_hint:
+            return False
+
+        group = objects.InstanceGroup.get_by_hint(context, group_hint)
+        policies = set(('anti-affinity', 'affinity'))
+        if not any((policy in policies) for policy in group.policies):
+            return False
+
+        if ('affinity' in group.policies and
+                not self._supports_affinity):
+            msg = _("ServerGroupAffinityConstraint not configured")
+            LOG.error(msg)
+            raise exception.NoValidHost(reason=msg)
+        if ('anti-affinity' in group.policies and
+                not self._supports_anti_affinity):
+            msg = _("ServerGroupAntiAffinityConstraint not configured")
+            LOG.error(msg)
+            raise exception.NoValidHost(reason=msg)
+
+        filter_properties.setdefault('group_hosts', set())
+        user_hosts = set(filter_properties['group_hosts'])
+        group_hosts = set(group.get_hosts(context))
+        filter_properties['group_hosts'] = user_hosts | group_hosts
+        filter_properties['group_policies'] = group.policies
+
+        return True
 
     def _schedule(self, context, request_spec, filter_properties,
                   instance_uuids=None):
