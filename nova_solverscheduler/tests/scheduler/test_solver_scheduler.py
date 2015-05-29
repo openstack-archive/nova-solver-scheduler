@@ -33,7 +33,6 @@ from nova.scheduler import weights
 from nova.tests import fake_instance
 from nova.tests.scheduler import test_scheduler
 from nova_solverscheduler.scheduler import solver_scheduler
-from nova_solverscheduler import solver_scheduler_exception
 from nova_solverscheduler.tests.scheduler import solver_scheduler_fakes \
         as fakes
 
