@@ -103,8 +103,7 @@ class ConstraintSolverScheduler(filter_scheduler.FilterScheduler):
         instance_properties = request_spec['instance_properties']
         instance_type = request_spec.get("instance_type", None)
 
-        update_group_hosts = self._setup_instance_group(context,
-                filter_properties)
+        self._setup_instance_group(context, filter_properties)
 
         config_options = self._get_configuration_options()
 

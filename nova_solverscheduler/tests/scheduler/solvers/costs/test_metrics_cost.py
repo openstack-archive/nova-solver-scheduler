@@ -18,10 +18,10 @@
 from nova import context
 from nova.openstack.common.fixture import mockpatch
 from nova import test
-from nova_solverscheduler.tests.scheduler import solver_scheduler_fakes \
-        as fakes
 from nova_solverscheduler.scheduler.solvers import costs
 from nova_solverscheduler.scheduler.solvers.costs import ram_cost
+from nova_solverscheduler.tests.scheduler import solver_scheduler_fakes \
+        as fakes
 
 
 class TestMetricsCost(test.NoDBTestCase):
