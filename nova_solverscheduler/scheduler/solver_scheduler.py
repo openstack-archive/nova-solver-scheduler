@@ -94,12 +94,12 @@ class ConstraintSolverScheduler(filter_scheduler.FilterScheduler):
 
         return True
 
-    def _schedule(self, context, request_spec, filter_properties,
-                  instance_uuids=None):
+    def _schedule(self, context, request_spec, filter_properties):
         """Returns a list of hosts that meet the required specs,
         ordered by their fitness.
         """
         instance_type = request_spec.get("instance_type", None)
+        instance_uuids = request_spec.get("instance_uuids", None)
 
         self._setup_instance_group(context, filter_properties)
 
