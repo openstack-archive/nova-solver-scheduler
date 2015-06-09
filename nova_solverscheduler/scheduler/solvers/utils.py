@@ -86,3 +86,25 @@ def get_host_racks_config():
                       str(e))
 
         return host_racks_map
+
+
+def get_host_racks_map(hosts):
+    """Return a dict where keys are host names and values are names of racks
+    belonging to each host. Hosts without rack config will not show up in the
+    result. By default this checks host aggregate for a metadata key 'rack',
+    if no such metadata key is found, it will check an external config file.
+    """
+    host_racks_map = {}
+
+    for host_state in hosts:
+        host_name = host_state.host
+        host_racks = aggregate_values_from_key(host_state, 'rack')
+        if host_racks:
+            host_racks_map.setdefault(host_name, set())
+            host_racks_map[host_name] = host_racks_map[host_name].union(
+                                                                    host_racks)
+
+    if not host_racks_map:
+        host_racks_map = get_host_racks_config()
+
+    return host_racks_map

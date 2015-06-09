@@ -13,15 +13,40 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import mock
 import os.path
 import tempfile
 
 from oslo_config import cfg
 
+from nova import objects
 from nova import test
 from nova_solverscheduler.scheduler.solvers import utils
+from nova_solverscheduler.tests.scheduler import solver_scheduler_fakes \
+        as fakes
 
 CONF = cfg.CONF
+
+_AGGREGATE_FIXTURES = [
+    objects.Aggregate(
+        id=1,
+        name='aggr1',
+        hosts=['fake-host'],
+        metadata={'k1': '1', 'k2': '2'},
+    ),
+    objects.Aggregate(
+        id=2,
+        name='bar',
+        hosts=['fake-host'],
+        metadata={'k1': '3', 'k2': '4'},
+    ),
+    objects.Aggregate(
+        id=3,
+        name='bar',
+        hosts=['fake-host'],
+        metadata={'k1': '6,7', 'k2': '8, 9'},
+    ),
+]
 
 
 class TestRackConfigLoader(test.NoDBTestCase):
@@ -67,3 +92,64 @@ k=bla
     def tearDown(self):
         self.config.close()
         super(TestRackConfigLoader, self).tearDown()
+
+
+class TestGetHostRacksMap(test.NoDBTestCase):
+    def setUp(self):
+        super(TestGetHostRacksMap, self).setUp()
+        self.fake_aggregates = [
+            objects.Aggregate(
+                id=1,
+                name='aggr1',
+                hosts=['host1', 'host2'],
+                metadata={'rack': 'rack1', 'foo': 'bar'},
+            ),
+            objects.Aggregate(
+                id=2,
+                name='aggr2',
+                hosts=['host2'],
+                metadata={'rack': 'rack2'},
+            ),
+            objects.Aggregate(
+                id=3,
+                name='aggr3',
+                hosts=['host3'],
+                metadata={'foo': 'bar'},
+            ),
+        ]
+
+    def test_get_host_racks_map_from_aggregate(self):
+        host1 = fakes.FakeSolverSchedulerHostState('host1', 'node1',
+                {'aggregates': self.fake_aggregates[0:1]})
+        host2 = fakes.FakeSolverSchedulerHostState('host2', 'node2',
+                {'aggregates': self.fake_aggregates[0:2]})
+        host3 = fakes.FakeSolverSchedulerHostState('host3', 'node3',
+                {'aggregates': self.fake_aggregates[2:3]})
+        host4 = fakes.FakeSolverSchedulerHostState('host4', 'node4',
+                {'aggregates': []})
+        hosts = [host1, host2, host3, host4]
+
+        result = utils.get_host_racks_map(hosts)
+        expected_result = {
+            'host1': set(['rack1']),
+            'host2': set(['rack1', 'rack2'])
+        }
+
+        self.assertEqual(expected_result, result)
+
+    @mock.patch('nova_solverscheduler.scheduler.solvers.utils.'
+                'get_host_racks_config')
+    def test_get_host_racks_map_no_aggregate_key(self, getconfig_mock):
+        host1 = fakes.FakeSolverSchedulerHostState('host1', 'node1', {})
+        host2 = fakes.FakeSolverSchedulerHostState('host2', 'node2', {})
+        host3 = fakes.FakeSolverSchedulerHostState('host3', 'node3',
+                {'aggregates': self.fake_aggregates[2:3]})
+        host4 = fakes.FakeSolverSchedulerHostState('host4', 'node4', {})
+        hosts = [host1, host2, host3, host4]
+
+        expected_result = {'host1': set('rack1'), 'host2': set('rack1')}
+        getconfig_mock.return_value = expected_result
+
+        result = utils.get_host_racks_map(hosts)
+
+        self.assertEqual(expected_result, result)
