@@ -17,7 +17,7 @@
 from oslo_config import cfg
 from oslo_log import log as logging
 
-from nova.i18n import _
+from nova.i18n import _LW
 from nova_solverscheduler.scheduler.solvers import constraints
 
 CONF = cfg.CONF
@@ -46,11 +46,11 @@ class DiskConstraint(constraints.BaseLinearConstraint):
                                   instance_type.get('swap', 0))
         for inst_type_key in ['root_gb', 'ephemeral_gb', 'swap']:
             if inst_type_key not in instance_type:
-                LOG.warn(_("Disk information of requested instances\' %s "
-                        "is incomplete, use 0 as the requested size.") %
+                LOG.warn(_LW("Disk information of requested instances\' %s "
+                        "is incomplete, use 0 as the requested size."),
                         inst_type_key)
         if requested_disk <= 0:
-            LOG.warn(_("DiskConstraint is skipped because requested "
+            LOG.warn(_LW("DiskConstraint is skipped because requested "
                         "instance disk size is 0 or invalid."))
             return constraint_matrix
 
@@ -71,8 +71,8 @@ class DiskConstraint(constraints.BaseLinearConstraint):
                         [True for j in xrange(acceptable_num_instances)] +
                         [False for j in xrange(inacceptable_num)])
 
-            LOG.debug(_("%(host)s can accept %(num)s requested instances "
-                        "according to DiskConstraint."),
+            LOG.debug("%(host)s can accept %(num)s requested instances "
+                        "according to DiskConstraint.",
                         {'host': hosts[i],
                         'num': acceptable_num_instances})
 

@@ -16,7 +16,7 @@
 from oslo_config import cfg
 from oslo_log import log as logging
 
-from nova.i18n import _
+from nova.i18n import _LW
 from nova_solverscheduler.scheduler.solvers import constraints
 
 CONF = cfg.CONF
@@ -45,7 +45,7 @@ class VcpuConstraint(constraints.BaseLinearConstraint):
         else:
             instance_vcpus = instance_type['vcpus']
         if instance_vcpus <= 0:
-            LOG.warn(_("VcpuConstraint is skipped because requested "
+            LOG.warn(_LW("VcpuConstraint is skipped because requested "
                         "instance vCPU number is 0 or invalid."))
             return constraint_matrix
 
@@ -54,7 +54,7 @@ class VcpuConstraint(constraints.BaseLinearConstraint):
                                                 hosts[i], filter_properties)
             # get available vcpus
             if not hosts[i].vcpus_total:
-                LOG.warn(_("vCPUs of %(host)s not set; assuming CPU "
+                LOG.warn(_LW("vCPUs of %(host)s not set; assuming CPU "
                             "collection broken."), {'host': hosts[i]})
                 continue
             else:
@@ -68,8 +68,8 @@ class VcpuConstraint(constraints.BaseLinearConstraint):
                         [True for j in xrange(acceptable_num_instances)] +
                         [False for j in xrange(inacceptable_num)])
 
-            LOG.debug(_("%(host)s can accept %(num)s requested instances "
-                        "according to VcpuConstraint."),
+            LOG.debug("%(host)s can accept %(num)s requested instances "
+                        "according to VcpuConstraint.",
                         {'host': hosts[i],
                         'num': acceptable_num_instances})
 
