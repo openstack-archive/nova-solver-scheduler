@@ -16,7 +16,6 @@
 from oslo_config import cfg
 from oslo_log import log as logging
 
-from nova.i18n import _
 from nova_solverscheduler.scheduler.solvers import constraints
 
 LOG = logging.getLogger(__name__)
@@ -51,8 +50,8 @@ class IoOpsConstraint(constraints.BaseLinearConstraint):
                         [True for j in xrange(acceptable_num_instances)] +
                         [False for j in xrange(inacceptable_num)])
 
-            LOG.debug(_("%(host)s can accept %(num)s requested instances "
-                        "according to IoOpsConstraint."),
+            LOG.debug("%(host)s can accept %(num)s requested instances "
+                        "according to IoOpsConstraint.",
                         {'host': hosts[i],
                         'num': acceptable_num_instances})
 

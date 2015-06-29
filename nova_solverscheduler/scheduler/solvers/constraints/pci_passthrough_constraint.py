@@ -17,7 +17,7 @@ import copy
 
 from oslo_log import log as logging
 
-from nova.i18n import _
+from nova.i18n import _LW
 from nova_solverscheduler.scheduler.solvers import constraints
 
 LOG = logging.getLogger(__name__)
@@ -57,7 +57,7 @@ class PciPassthroughConstraint(constraints.BaseLinearConstraint):
 
         pci_requests = filter_properties.get('pci_requests')
         if not pci_requests:
-            LOG.warn(_("PciPassthroughConstraint check is skipped because "
+            LOG.warn(_LW("PciPassthroughConstraint check is skipped because "
                         "requested instance PCI requests is unavailable."))
             return constraint_matrix
 
@@ -73,8 +73,8 @@ class PciPassthroughConstraint(constraints.BaseLinearConstraint):
                         [True for j in xrange(acceptable_num_instances)] +
                         [False for j in xrange(inacceptable_num)])
 
-            LOG.debug(_("%(host)s can accept %(num)s requested instances "
-                        "according to PciPassthroughConstraint."),
+            LOG.debug("%(host)s can accept %(num)s requested instances "
+                        "according to PciPassthroughConstraint.",
                         {'host': hosts[i],
                         'num': acceptable_num_instances})
 

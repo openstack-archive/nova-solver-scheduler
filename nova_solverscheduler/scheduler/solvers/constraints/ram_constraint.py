@@ -17,7 +17,7 @@
 from oslo_config import cfg
 from oslo_log import log as logging
 
-from nova.i18n import _
+from nova.i18n import _LW
 from nova_solverscheduler.scheduler.solvers import constraints
 
 CONF = cfg.CONF
@@ -43,10 +43,10 @@ class RamConstraint(constraints.BaseLinearConstraint):
         instance_type = filter_properties.get('instance_type') or {}
         requested_ram = instance_type.get('memory_mb', 0)
         if 'memory_mb' not in instance_type:
-            LOG.warn(_("No information about requested instances\' RAM size "
+            LOG.warn(_LW("No information about requested instances\' RAM size "
                     "was found, default value (0) is used."))
         if requested_ram <= 0:
-            LOG.warn(_("RamConstraint is skipped because requested "
+            LOG.warn(_LW("RamConstraint is skipped because requested "
                         "instance RAM size is 0 or invalid."))
             return constraint_matrix
 
@@ -67,8 +67,8 @@ class RamConstraint(constraints.BaseLinearConstraint):
                         [True for j in xrange(acceptable_num_instances)] +
                         [False for j in xrange(inacceptable_num)])
 
-            LOG.debug(_("%(host)s can accept %(num)s requested instances "
-                        "according to RamConstraint."),
+            LOG.debug("%(host)s can accept %(num)s requested instances "
+                        "according to RamConstraint.",
                         {'host': hosts[i],
                         'num': acceptable_num_instances})
 

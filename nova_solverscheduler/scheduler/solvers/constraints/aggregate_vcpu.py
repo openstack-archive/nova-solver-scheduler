@@ -17,7 +17,7 @@ from oslo_config import cfg
 from oslo_log import log as logging
 
 from nova import db
-from nova.i18n import _
+from nova.i18n import _LW
 from nova_solverscheduler.scheduler.solvers.constraints import vcpu_constraint
 
 CONF = cfg.CONF
@@ -46,14 +46,14 @@ class AggregateVcpuConstraint(vcpu_constraint.VcpuConstraint):
             return CONF.cpu_allocation_ratio
 
         if num_values > 1:
-            LOG.warning(_("%(num_values)d ratio values found, "
+            LOG.warning(_LW("%(num_values)d ratio values found, "
                           "of which the minimum value will be used."),
                          {'num_values': num_values})
 
         try:
             ratio = min(map(float, aggregate_vals))
         except ValueError as e:
-            LOG.warning(_("Could not decode cpu_allocation_ratio: '%s'"), e)
+            LOG.warning(_LW("Could not decode cpu_allocation_ratio: '%s'"), e)
             ratio = CONF.cpu_allocation_ratio
 
         return ratio

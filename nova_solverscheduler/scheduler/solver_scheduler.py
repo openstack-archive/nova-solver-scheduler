@@ -24,7 +24,6 @@ from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import importutils
 
-from nova.i18n import _
 from nova.scheduler import filter_scheduler
 from nova.scheduler import weights
 
@@ -105,7 +104,7 @@ class ConstraintSolverScheduler(filter_scheduler.FilterScheduler):
         list_hosts = list(hosts)
         host_instance_combinations = self.hosts_solver.solve(
                                             list_hosts, filter_properties)
-        LOG.debug(_("solver results: %(host_instance_tuples_list)s") %
+        LOG.debug("solver results: %(host_instance_tuples_list)s",
                     {"host_instance_tuples_list": host_instance_combinations})
         # NOTE(Yathi): Not using weights in solver scheduler,
         # but creating a list of WeighedHosts with a default weight of 1

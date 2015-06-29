@@ -20,7 +20,7 @@ from pulp import solvers as pulp_solver_classes
 from oslo_config import cfg
 from oslo_log import log as logging
 
-from nova.i18n import _
+from nova.i18n import _LW
 from nova_solverscheduler.scheduler import solvers as scheduler_solver
 
 pulp_solver_opts = [
@@ -213,8 +213,8 @@ class PulpSolver(scheduler_solver.BaseHostSolver):
                     host_instance_combinations.append(
                             (host_key_map[host_key], instances_iter.next()))
         else:
-            LOG.warn(_("Pulp solver didnot find optimal solution! reason: %s")
-                    % pulp.LpStatus[prob.status])
+            LOG.warn(_LW("Pulp solver didnot find optimal solution! "
+                    "reason: %s"), pulp.LpStatus[prob.status])
             host_instance_combinations = []
 
         return host_instance_combinations
