@@ -1,0 +1,8 @@
+Verified+2: Jenkins
+Code-Review+2: Xinyuan Huang <xinyuahu@cisco.com>
+Workflow+1: Xinyuan Huang <xinyuahu@cisco.com>
+Submitted-by: Jenkins
+Submitted-at: Mon, 29 Jun 2015 10:12:45 +0000
+Reviewed-on: https://review.openstack.org/196612
+Project: stackforge/nova-solver-scheduler
+Branch: refs/heads/master
