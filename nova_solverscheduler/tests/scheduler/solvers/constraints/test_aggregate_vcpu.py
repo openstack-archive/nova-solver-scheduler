@@ -43,17 +43,18 @@ class TestAggregateVcpuConstraint(test.NoDBTestCase):
                 {'vcpus_total': 16, 'vcpus_used': 16})
         self.fake_hosts = [host1, host2, host3]
 
-    @mock.patch('nova.db.aggregate_metadata_get_by_host')
+    @mock.patch('nova_solverscheduler.scheduler.solvers.utils.'
+                'aggregate_values_from_key')
     def test_get_constraint_matrix(self, agg_mock):
         self.flags(cpu_allocation_ratio=1.0)
 
         def _agg_mock_side_effect(*args, **kwargs):
-            if args[1] == 'host1':
-                return {'cpu_allocation_ratio': set(['1.0', '2.0'])}
-            if args[1] == 'host2':
-                return {'cpu_allocation_ratio': set(['3.0'])}
-            if args[1] == 'host3':
-                return {'cpu_allocation_ratio': set()}
+            if args[0].host == 'host1':
+                return set(['1.0', '2.0'])
+            if args[0].host == 'host2':
+                return set(['3.0'])
+            if args[0].host == 'host3':
+                return set([])
         agg_mock.side_effect = _agg_mock_side_effect
 
         expected_cons_mat = [
@@ -62,4 +63,7 @@ class TestAggregateVcpuConstraint(test.NoDBTestCase):
             [False, False]]
         cons_mat = self.constraint_cls().get_constraint_matrix(
                     self.fake_hosts, self.fake_filter_properties)
+        agg_mock.assert_any_call(self.fake_hosts[0], 'cpu_allocation_ratio')
+        agg_mock.assert_any_call(self.fake_hosts[1], 'cpu_allocation_ratio')
+        agg_mock.assert_any_call(self.fake_hosts[2], 'cpu_allocation_ratio')
         self.assertEqual(expected_cons_mat, cons_mat)
