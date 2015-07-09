@@ -46,44 +46,44 @@ LOG = logging.getLogger(__name__)
 
 
 def get_host_racks_config():
-        """Read the rack config file to get physical rack configurations."""
-        # Example section in the file:
-        # [ml2_mech_cisco_nexus:1.1.1.1]
-        # compute1=1/1
-        # compute2=1/2
-        # ...
+    """Read the rack config file to get physical rack configurations."""
+    # Example section in the file:
+    # [ml2_mech_cisco_nexus:1.1.1.1]
+    # compute1=1/1
+    # compute2=1/2
+    # ...
 
-        host_racks_map = {}
-        sections = {}
+    host_racks_map = {}
+    sections = {}
 
-        filepath = CONF.rack_config
-        if not filepath:
-            return host_racks_map
-
-        if not os.path.exists(filepath):
-            msg = _("The rack config file is not found: %s")
-            LOG.error(msg % filepath)
-            return host_racks_map
-
-        prefix = CONF.rack_config_prefix
-        if not prefix:
-            msg = _("Rack config prefix is not set.")
-            LOG.error(msg)
-            return host_racks_map
-
-        try:
-            rack_config_parser = cfg.ConfigParser(filepath, sections)
-            rack_config_parser.parse()
-
-            for section_name in sections.keys():
-                if section_name.startswith(prefix):
-                    # section_name: rack id
-                    for key, value in sections[section_name].items():
-                        # key: host name, value: port id
-                        host_racks_map.setdefault(key, set([]))
-                        host_racks_map[key].add(section_name)
-        except Exception as e:
-            msg = _("The rack config file is not parsed properly: %s")
-            LOG.error(msg % str(e))
-
+    filepath = CONF.rack_config
+    if not filepath:
         return host_racks_map
+
+    if not os.path.exists(filepath):
+        msg = _("The rack config file is not found: %s")
+        LOG.error(msg % filepath)
+        return host_racks_map
+
+    prefix = CONF.rack_config_prefix
+    if not prefix:
+        msg = _("Rack config prefix is not set.")
+        LOG.error(msg)
+        return host_racks_map
+
+    try:
+        rack_config_parser = cfg.ConfigParser(filepath, sections)
+        rack_config_parser.parse()
+
+        for section_name in sections.keys():
+            if section_name.startswith(prefix):
+                # section_name: rack id
+                for key, value in sections[section_name].items():
+                    # key: host name, value: port id
+                    host_racks_map.setdefault(key, set([]))
+                    host_racks_map[key].add(section_name)
+    except Exception as e:
+        msg = _("The rack config file is not parsed properly: %s")
+        LOG.error(msg % str(e))
+
+    return host_racks_map
