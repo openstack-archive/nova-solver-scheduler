@@ -427,6 +427,30 @@ class TestSameRackConstraint(test.NoDBTestCase):
 
         self.assertEqual(expected_cons_mat, cons_mat)
 
+    def test_same_rack_wrong_hint(self, agg_mock):
+        fake_filter_properties = {
+            'context': self.context,
+            'project_id': 'fake',
+            'num_instances': 2,
+            'scheduler_hints': {'same_rack': 'wronguuid'}
+        }
+
+        agg_mock.return_value = {}
+
+        expected_cons_mat = [
+            [False, False],
+            [False, False],
+            [False, False],
+            [False, False],
+            [False, False],
+            [False, False]
+        ]
+
+        cons_mat = self.constraint_cls().get_constraint_matrix(
+                                    self.fake_hosts, fake_filter_properties)
+
+        self.assertEqual(expected_cons_mat, cons_mat)
+
 
 @mock.patch('nova.db.aggregate_host_get_by_metadata_key')
 class TestDifferentRackConstraint(test.NoDBTestCase):
@@ -635,6 +659,30 @@ class TestDifferentRackConstraint(test.NoDBTestCase):
             [True, True],
             [True, True],
             [True, True]
+        ]
+
+        cons_mat = self.constraint_cls().get_constraint_matrix(
+                                    self.fake_hosts, fake_filter_properties)
+
+        self.assertEqual(expected_cons_mat, cons_mat)
+
+    def test_different_rack_wrong_hint(self, agg_mock):
+        fake_filter_properties = {
+            'context': self.context,
+            'project_id': 'fake',
+            'num_instances': 2,
+            'scheduler_hints': {'different_rack': 'wronguuid'}
+        }
+
+        agg_mock.return_value = {}
+
+        expected_cons_mat = [
+            [False, False],
+            [False, False],
+            [False, False],
+            [False, False],
+            [False, False],
+            [False, False]
         ]
 
         cons_mat = self.constraint_cls().get_constraint_matrix(

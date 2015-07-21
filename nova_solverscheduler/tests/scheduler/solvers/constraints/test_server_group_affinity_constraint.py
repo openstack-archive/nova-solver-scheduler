@@ -13,6 +13,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import mock
+
+from nova import context
 from nova import test
 from nova_solverscheduler.scheduler.solvers.constraints \
         import server_group_affinity_constraint
@@ -20,6 +23,8 @@ from nova_solverscheduler.tests.scheduler import solver_scheduler_fakes \
         as fakes
 
 
+@mock.patch('nova_solverscheduler.scheduler.solvers.utils.'
+            'get_hosts_from_group_hint')
 class TestServerGroupAffinityConstraint(test.NoDBTestCase):
 
     def setUp(self):
@@ -27,6 +32,7 @@ class TestServerGroupAffinityConstraint(test.NoDBTestCase):
         self.constraint_cls = \
                 server_group_affinity_constraint.ServerGroupAffinityConstraint
         self._generate_fake_constraint_input()
+        self.context = context.RequestContext('fake_usr', 'fake_proj')
 
     def _generate_fake_constraint_input(self):
         host1 = fakes.FakeSolverSchedulerHostState('host1', 'node1', {})
@@ -34,12 +40,14 @@ class TestServerGroupAffinityConstraint(test.NoDBTestCase):
         host3 = fakes.FakeSolverSchedulerHostState('host3', 'node1', {})
         self.fake_hosts = [host1, host2, host3]
 
-    def test_get_constraint_matrix(self):
+    def test_get_constraint_matrix(self, mock_gethosts):
         fake_filter_properties = {
+                'context': self.context,
                 'group_policies': ['affinity'],
                 'group_hosts': ['host2'],
                 'instance_uuids': ['fake_uuid_%s' % x for x in range(2)],
                 'num_instances': 2}
+        mock_gethosts.return_value = ['host2']
         expected_cons_mat = [
             [False, False],
             [True, True],
@@ -48,12 +56,14 @@ class TestServerGroupAffinityConstraint(test.NoDBTestCase):
                     self.fake_hosts, fake_filter_properties)
         self.assertEqual(expected_cons_mat, cons_mat)
 
-    def test_get_constraint_matrix_empty_group_hosts_list(self):
+    def test_get_constraint_matrix_empty_group_hosts_list(self, mock_gethosts):
         fake_filter_properties = {
+                'context': self.context,
                 'group_policies': ['affinity'],
                 'group_hosts': [],
                 'instance_uuids': ['fake_uuid_%s' % x for x in range(2)],
                 'num_instances': 2}
+        mock_gethosts.return_value = []
         expected_cons_mat = [
             [False, True],
             [False, True],
@@ -62,8 +72,9 @@ class TestServerGroupAffinityConstraint(test.NoDBTestCase):
                     self.fake_hosts, fake_filter_properties)
         self.assertEqual(expected_cons_mat, cons_mat)
 
-    def test_get_constraint_matrix_wrong_policy(self):
+    def test_get_constraint_matrix_wrong_policy(self, mock_gethosts):
         fake_filter_properties = {
+                'context': self.context,
                 'group_policies': ['other'],
                 'instance_uuids': ['fake_uuid_%s' % x for x in range(2)],
                 'num_instances': 2}
@@ -75,7 +86,26 @@ class TestServerGroupAffinityConstraint(test.NoDBTestCase):
                     self.fake_hosts, fake_filter_properties)
         self.assertEqual(expected_cons_mat, cons_mat)
 
+    def test_get_constraint_matrix_changed_group_hosts_info(self,
+                                                            mock_gethosts):
+        fake_filter_properties = {
+                'context': self.context,
+                'group_policies': ['affinity'],
+                'group_hosts': ['host1'],
+                'instance_uuids': ['fake_uuid_%s' % x for x in range(2)],
+                'num_instances': 2}
+        mock_gethosts.return_value = ['host1', 'host2']
+        expected_cons_mat = [
+            [False, False],
+            [False, False],
+            [False, False]]
+        cons_mat = self.constraint_cls().get_constraint_matrix(
+                    self.fake_hosts, fake_filter_properties)
+        self.assertEqual(expected_cons_mat, cons_mat)
 
+
+@mock.patch('nova_solverscheduler.scheduler.solvers.utils.'
+            'get_hosts_from_group_hint')
 class TestServerGroupAntiAffinityConstraint(test.NoDBTestCase):
 
     def setUp(self):
@@ -83,6 +113,7 @@ class TestServerGroupAntiAffinityConstraint(test.NoDBTestCase):
         self.constraint_cls = server_group_affinity_constraint.\
                                             ServerGroupAntiAffinityConstraint
         self._generate_fake_constraint_input()
+        self.context = context.RequestContext('fake_usr', 'fake_proj')
 
     def _generate_fake_constraint_input(self):
         host1 = fakes.FakeSolverSchedulerHostState('host1', 'node1', {})
@@ -90,12 +121,14 @@ class TestServerGroupAntiAffinityConstraint(test.NoDBTestCase):
         host3 = fakes.FakeSolverSchedulerHostState('host3', 'node1', {})
         self.fake_hosts = [host1, host2, host3]
 
-    def test_get_constraint_matrix(self):
+    def test_get_constraint_matrix(self, mock_gethosts):
         fake_filter_properties = {
+                'context': self.context,
                 'group_policies': ['anti-affinity'],
                 'group_hosts': ['host1', 'host3'],
                 'instance_uuids': ['fake_uuid_%s' % x for x in range(2)],
                 'num_instances': 2}
+        mock_gethosts.return_value = ['host1', 'host3']
         expected_cons_mat = [
             [False, False],
             [True, False],
@@ -104,12 +137,14 @@ class TestServerGroupAntiAffinityConstraint(test.NoDBTestCase):
                     self.fake_hosts, fake_filter_properties)
         self.assertEqual(expected_cons_mat, cons_mat)
 
-    def test_get_constraint_matrix_empty_group_hosts_list(self):
+    def test_get_constraint_matrix_empty_group_hosts_list(self, mock_gethosts):
         fake_filter_properties = {
+                'context': self.context,
                 'group_policies': ['anti-affinity'],
                 'group_hosts': [],
                 'instance_uuids': ['fake_uuid_%s' % x for x in range(2)],
                 'num_instances': 2}
+        mock_gethosts.return_value = []
         expected_cons_mat = [
             [True, False],
             [True, False],
@@ -118,8 +153,9 @@ class TestServerGroupAntiAffinityConstraint(test.NoDBTestCase):
                     self.fake_hosts, fake_filter_properties)
         self.assertEqual(expected_cons_mat, cons_mat)
 
-    def test_get_constraint_matrix_wrong_policy(self):
+    def test_get_constraint_matrix_wrong_policy(self, mock_gethosts):
         fake_filter_properties = {
+                'context': self.context,
                 'group_policies': ['other'],
                 'instance_uuids': ['fake_uuid_%s' % x for x in range(2)],
                 'num_instances': 2}
@@ -127,6 +163,23 @@ class TestServerGroupAntiAffinityConstraint(test.NoDBTestCase):
             [True, True],
             [True, True],
             [True, True]]
+        cons_mat = self.constraint_cls().get_constraint_matrix(
+                    self.fake_hosts, fake_filter_properties)
+        self.assertEqual(expected_cons_mat, cons_mat)
+
+    def test_get_constraint_matrix_changed_group_hosts_info(self,
+                                                            mock_gethosts):
+        fake_filter_properties = {
+                'context': self.context,
+                'group_policies': ['anti-affinity'],
+                'group_hosts': ['host1'],
+                'instance_uuids': ['fake_uuid_%s' % x for x in range(2)],
+                'num_instances': 2}
+        mock_gethosts.return_value = ['host1', 'host2']
+        expected_cons_mat = [
+            [False, False],
+            [False, False],
+            [False, False]]
         cons_mat = self.constraint_cls().get_constraint_matrix(
                     self.fake_hosts, fake_filter_properties)
         self.assertEqual(expected_cons_mat, cons_mat)
