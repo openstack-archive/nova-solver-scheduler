@@ -102,6 +102,10 @@ class ConstraintSolverScheduler(filter_scheduler.FilterScheduler):
                                       hosts, filter_properties)
 
         list_hosts = list(hosts)
+        LOG.debug(_("host state list: %(hoststates)s"),
+                  {"hoststates": list_hosts})
+        LOG.debug(_("filter properties given to solver: %(prop)s"),
+                  {"prop": filter_properties})
         host_instance_combinations = self.hosts_solver.solve(
                                             list_hosts, filter_properties)
         LOG.debug("solver results: %(host_instance_tuples_list)s",
