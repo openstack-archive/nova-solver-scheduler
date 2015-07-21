@@ -17,8 +17,8 @@ import six
 
 from oslo.config import cfg
 
-from nova.compute import api as compute
 from nova import db
+from nova import exception
 from nova.openstack.common.gettextutils import _
 from nova.openstack.common import log as logging
 from nova_solverscheduler.scheduler.solvers import constraints
@@ -102,7 +102,6 @@ class SameRackConstraint(constraints.BaseLinearConstraint):
 
     def __init__(self):
         super(SameRackConstraint, self).__init__()
-        self.compute_api = compute.API()
 
     def get_constraint_matrix(self, hosts, filter_properties):
         num_hosts = len(hosts)
@@ -122,6 +121,18 @@ class SameRackConstraint(constraints.BaseLinearConstraint):
         if isinstance(affinity_uuids, six.string_types):
             affinity_uuids = [affinity_uuids]
 
+        # get hosts of given instances
+        try:
+            affinity_hosts = solver_utils.get_hosts_from_instance_uuids(
+                    elevated, affinity_uuids)
+        except (exception.InstanceNotFound, ValueError) as e:
+            LOG.warn(_('Incomplete affinity host(s) information, rejected all '
+                       'hosts. Reason: %(reason)s'), {'reason': str(e)})
+            constraint_matrix = [[False for j in xrange(num_instances)]
+                                for i in xrange(num_hosts)]
+            return constraint_matrix
+
+        # get hosts' racks
         host_racks_map = db.aggregate_host_get_by_metadata_key(elevated,
                                                                 key='rack')
         if not host_racks_map:
@@ -129,17 +140,12 @@ class SameRackConstraint(constraints.BaseLinearConstraint):
             host_racks_map = solver_utils.get_host_racks_config()
 
         affinity_racks = set([])
-        affinity_hosts = set([])
 
         for i in xrange(num_hosts):
             host_name = hosts[i].host
             host_racks = host_racks_map.get(host_name, set([]))
-            if self.compute_api.get_all(context,
-                                        {'host': host_name,
-                                        'uuid': affinity_uuids,
-                                        'deleted': False}):
+            if host_name in affinity_hosts:
                 affinity_racks = affinity_racks.union(host_racks)
-                affinity_hosts.add(host_name)
 
         for i in xrange(num_hosts):
             host_name = hosts[i].host
@@ -166,7 +172,6 @@ class DifferentRackConstraint(constraints.BaseLinearConstraint):
 
     def __init__(self):
         super(DifferentRackConstraint, self).__init__()
-        self.compute_api = compute.API()
 
     def get_constraint_matrix(self, hosts, filter_properties):
         num_hosts = len(hosts)
@@ -186,6 +191,18 @@ class DifferentRackConstraint(constraints.BaseLinearConstraint):
         if isinstance(affinity_uuids, six.string_types):
             affinity_uuids = [affinity_uuids]
 
+        # get hosts of given instances
+        try:
+            affinity_hosts = solver_utils.get_hosts_from_instance_uuids(
+                    elevated, affinity_uuids)
+        except (exception.InstanceNotFound, ValueError) as e:
+            LOG.warn(_('Incomplete affinity host(s) information, rejected all '
+                       'hosts. Reason: %(reason)s'), {'reason': str(e)})
+            constraint_matrix = [[False for j in xrange(num_instances)]
+                                for i in xrange(num_hosts)]
+            return constraint_matrix
+
+        # get hosts' racks
         host_racks_map = db.aggregate_host_get_by_metadata_key(elevated,
                                                                 key='rack')
         if not host_racks_map:
@@ -193,17 +210,12 @@ class DifferentRackConstraint(constraints.BaseLinearConstraint):
             host_racks_map = solver_utils.get_host_racks_config()
 
         affinity_racks = set([])
-        affinity_hosts = set([])
 
         for i in xrange(num_hosts):
             host_name = hosts[i].host
             host_racks = host_racks_map.get(host_name, set([]))
-            if self.compute_api.get_all(context,
-                                        {'host': host_name,
-                                        'uuid': affinity_uuids,
-                                        'deleted': False}):
+            if host_name in affinity_hosts:
                 affinity_racks = affinity_racks.union(host_racks)
-                affinity_hosts.add(host_name)
 
         for i in xrange(num_hosts):
             host_name = hosts[i].host

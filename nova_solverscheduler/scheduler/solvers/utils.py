@@ -19,6 +19,9 @@ import os.path
 
 from oslo.config import cfg
 
+from nova import exception
+from nova.objects import instance as instance_obj
+from nova.objects import instance_group as instance_group_obj
 from nova.openstack.common.gettextutils import _
 from nova.openstack.common import log as logging
 
@@ -87,3 +90,43 @@ def get_host_racks_config():
         LOG.error(msg % str(e))
 
     return host_racks_map
+
+
+def get_hosts_from_instance_uuids(context, uuids):
+    """Get the hosts' names of the instances given in uuids.
+    The uuids must be a list.
+    """
+
+    filters = {'uuid': uuids, 'deleted': False}
+    instances = instance_obj.InstanceList.get_by_filters(context,
+                                                         filters=filters)
+
+    if len(instances) < len(uuids):
+        missing_uuids = list(set(uuids) - set([instance.uuid for instance
+                                               in instances if instance.uuid]))
+        raise exception.InstanceNotFound(instance_id=', '.join(missing_uuids))
+
+    hosts = set([])
+    instances_invalid_host = []
+    for instance in instances:
+        if instance.host:
+            hosts.add(instance.host)
+        else:
+            instances_invalid_host.append(instance.uuid)
+    if instances_invalid_host:
+        raise ValueError(_("Invalid host value for instance: %(insts)s")
+                        % {'insts': ', '.join(instances_invalid_host)})
+
+    hosts = list(hosts)
+
+    return hosts
+
+
+def get_hosts_from_group_hint(context, group_hint):
+    """Get the instance hosts of the instance group given in group_hint.
+    The group_hint must be a string of group uuid or name.
+    """
+    group = instance_group_obj.InstanceGroup.get_by_hint(context, group_hint)
+    group_members = group.members or []
+    hosts = get_hosts_from_instance_uuids(context, group_members)
+    return hosts
