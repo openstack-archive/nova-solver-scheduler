@@ -30,6 +30,9 @@ class NumInstancesConstraint(constraints.BaseLinearConstraint):
     each host can launch.
     """
 
+    def _get_max_instances_per_host(self, host_state, filter_properties):
+        return CONF.max_instances_per_host
+
     def get_constraint_matrix(self, hosts, filter_properties):
         num_hosts = len(hosts)
         num_instances = filter_properties.get('num_instances')
@@ -37,9 +40,9 @@ class NumInstancesConstraint(constraints.BaseLinearConstraint):
         constraint_matrix = [[True for j in xrange(num_instances)]
                             for i in xrange(num_hosts)]
 
-        max_instances = CONF.max_instances_per_host
-
         for i in xrange(num_hosts):
+            max_instances = self._get_max_instances_per_host(hosts[i],
+                                                             filter_properties)
             num_host_instances = hosts[i].num_instances
             acceptable_num_instances = int(max_instances - num_host_instances)
             if acceptable_num_instances < 0:
