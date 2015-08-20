@@ -20,7 +20,8 @@ import mock
 from nova import context
 from nova import test
 from nova_solverscheduler.scheduler.solvers import costs
-from nova_solverscheduler.scheduler.solvers.costs import rack_affinity_cost
+from nova_solverscheduler.scheduler.solvers.costs \
+        import tenant_rack_affinity_cost
 from nova_solverscheduler.tests.scheduler import solver_scheduler_fakes \
         as fakes
 
@@ -33,7 +34,7 @@ class TestTenantRackAffinityCost(test.NoDBTestCase):
         self.cost_handler = costs.CostHandler()
         self.cost_classes = self.cost_handler.get_matching_classes(
                 ['nova_solverscheduler.scheduler.solvers.costs.'
-                'rack_affinity_cost.TenantRackAffinityCost'])
+                'tenant_rack_affinity_cost.TenantRackAffinityCost'])
 
     def _get_fake_hosts(self):
         host1 = fakes.FakeSolverSchedulerHostState('host1', 'node1',
@@ -54,7 +55,8 @@ class TestTenantRackAffinityCost(test.NoDBTestCase):
         self.flags(tenant_rack_affinity_cost_multiplier=0.5,
                 group='solver_scheduler')
         self.assertEqual(0.5,
-                rack_affinity_cost.TenantRackAffinityCost().cost_multiplier())
+                tenant_rack_affinity_cost.TenantRackAffinityCost()
+                .cost_multiplier())
 
     def test_get_extended_cost_matrix_normal(self, racks_mock):
         fake_hosts = self._get_fake_hosts()
