@@ -17,7 +17,7 @@
 RAM Cost.  Calculate instance placement costs by hosts' RAM usage.
 
 The default is to spread instances across all hosts evenly.  If you prefer
-stacking, you can set the 'ram_cost_multiplier' option to a positive
+stacking, you can set the 'ram_cost_multiplier' option to a negative
 number and the cost has the opposite effect of the default.
 """
 
