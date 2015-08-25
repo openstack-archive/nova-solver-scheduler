@@ -64,9 +64,6 @@ class TenantRackAffinityCost(solver_costs.BaseLinearCost):
         for i in xrange(num_hosts):
             host_name = hosts[i].host
             host_racks = host_racks_map.get(host_name, set([]))
-
-            # if tenant not in host state then tenant network does not exist
-            # there, hence no need for further check
             if project_id in hosts[i].projects:
                 affinity_hosts.add(host_name)
                 affinity_racks = affinity_racks.union(host_racks)
