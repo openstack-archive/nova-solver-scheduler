@@ -1,4 +1,4 @@
 [gerrit]
 host=review.openstack.org
 port=29418
-project=stackforge/nova-solver-scheduler.git
+project=openstack/nova-solver-scheduler.git
