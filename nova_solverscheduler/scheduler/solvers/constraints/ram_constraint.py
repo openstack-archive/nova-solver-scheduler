@@ -43,10 +43,10 @@ class RamConstraint(constraints.BaseLinearConstraint):
         instance_type = filter_properties.get('instance_type') or {}
         requested_ram = instance_type.get('memory_mb', 0)
         if 'memory_mb' not in instance_type:
-            LOG.warn(_LW("No information about requested instances\' RAM size "
-                    "was found, default value (0) is used."))
+            LOG.warning(_LW("No information about requested instances\' "
+                        "RAM size was found, default value (0) is used."))
         if requested_ram <= 0:
-            LOG.warn(_LW("RamConstraint is skipped because requested "
+            LOG.warning(_LW("RamConstraint is skipped because requested "
                         "instance RAM size is 0 or invalid."))
             return constraint_matrix
 
