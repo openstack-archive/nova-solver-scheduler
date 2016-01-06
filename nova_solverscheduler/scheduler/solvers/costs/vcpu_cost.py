@@ -53,15 +53,15 @@ class VcpuCost(solver_costs.BaseLinearCost):
         instance_type = filter_properties.get('instance_type') or {}
         requested_vcpus = instance_type.get('vcpus', 0)
         if requested_vcpus <= 0:
-            LOG.warn(_LW("Requested instances\' vCPU number is 0 or invalid, "
-                    "default value (0) is used."))
+            LOG.warning(_LW("Requested instances\' vCPU number is 0 or "
+                        "invalid,default value (0) is used."))
 
         remaining_vcpus_list = []
         for i in xrange(num_hosts):
             vcpus_total = hosts[i].vcpus_total
             vcpus_used = hosts[i].vcpus_used
             if not vcpus_total:
-                LOG.warn(_LW("vCPUs of %(host)s not set; assuming CPU "
+                LOG.warning(_LW("vCPUs of %(host)s not set; assuming CPU "
                             "collection broken."), {'host': hosts[i]})
                 vcpus_total = 0
             remaining_vcpus = vcpus_total - vcpus_used

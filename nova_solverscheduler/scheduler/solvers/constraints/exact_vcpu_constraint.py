@@ -38,14 +38,14 @@ class ExactVcpuConstraint(constraints.BaseLinearConstraint):
         else:
             instance_vcpus = instance_type['vcpus']
         if instance_vcpus <= 0:
-            LOG.warn(_LW("ExactVcpuConstraint is skipped because requested "
-                         "instance vCPU number is 0 or invalid."))
+            LOG.warning(_LW("ExactVcpuConstraint is skipped because "
+                        "requested instance vCPU number is 0 or invalid."))
             return constraint_matrix
 
         for i in xrange(num_hosts):
             # get available vcpus
             if not hosts[i].vcpus_total:
-                LOG.warn(_LW("vCPUs of %(host)s not set; assuming CPU "
+                LOG.warning(_LW("vCPUs of %(host)s not set; assuming CPU "
                              "collection broken."), {'host': hosts[i]})
                 constraint_matrix[i] = [False for j in xrange(num_instances)]
                 continue
