@@ -39,11 +39,11 @@ class ExactDiskConstraint(constraints.BaseLinearConstraint):
                                   instance_type.get('swap', 0))
         for inst_type_key in ['root_gb', 'ephemeral_gb', 'swap']:
             if inst_type_key not in instance_type:
-                LOG.warn(_LW("Disk information of requested instances\' %s "
+                LOG.warning(_LW("Disk information of requested instances\' %s "
                         "is incomplete, use 0 as the requested size."),
                         inst_type_key)
         if requested_disk <= 0:
-            LOG.warn(_LW("ExactDiskConstraint is skipped because requested "
+            LOG.warning(_LW("ExactDiskConstraint is skipped because requested "
                         "instance disk size is 0 or invalid."))
             return constraint_matrix
 
