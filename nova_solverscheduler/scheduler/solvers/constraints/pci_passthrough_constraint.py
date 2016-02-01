@@ -57,7 +57,7 @@ class PciPassthroughConstraint(constraints.BaseLinearConstraint):
 
         pci_requests = filter_properties.get('pci_requests')
         if not pci_requests:
-            LOG.warn(_LW("PciPassthroughConstraint check is skipped because "
+            LOG.warning(_LW("PciPassthroughConstraint check is skipped because "
                         "requested instance PCI requests is unavailable."))
             return constraint_matrix
 

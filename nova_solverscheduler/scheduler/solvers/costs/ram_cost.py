@@ -53,7 +53,7 @@ class RamCost(solver_costs.BaseLinearCost):
         instance_type = filter_properties.get('instance_type') or {}
         requested_ram = instance_type.get('memory_mb', 0)
         if 'memory_mb' not in instance_type:
-            LOG.warn(_LW("No information about requested instances\' RAM size "
+            LOG.warning(_LW("No information about requested instances\' RAM size "
                     "was found, default value (0) is used."))
 
         extended_cost_matrix = [[0 for j in xrange(num_instances + 1)]

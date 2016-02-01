@@ -213,7 +213,7 @@ class PulpSolver(scheduler_solver.BaseHostSolver):
                     host_instance_combinations.append(
                             (host_key_map[host_key], instances_iter.next()))
         else:
-            LOG.warn(_LW("Pulp solver didnot find optimal solution! "
+            LOG.warning(_LW("Pulp solver didnot find optimal solution! "
                     "reason: %s"), pulp.LpStatus[prob.status])
             host_instance_combinations = []
 
