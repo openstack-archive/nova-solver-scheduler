@@ -24,11 +24,11 @@ from nova.i18n import _LW
 from nova_solverscheduler.scheduler import solvers as scheduler_solver
 
 pulp_solver_opts = [
-        cfg.IntOpt('pulp_solver_timeout_seconds',
-                    default=20,
-                    help='How much time in seconds is allowed for solvers to '
-                         'solve the scheduling problem. If this time limit '
-                         'is exceeded the solver will be stopped.'),
+    cfg.IntOpt('pulp_solver_timeout_seconds',
+               default=20,
+               help='How much time in seconds is allowed for solvers to '
+               'solve the scheduling problem. If this time limit '
+               'is exceeded the solver will be stopped.'),
 ]
 
 CONF = cfg.CONF
@@ -38,6 +38,7 @@ LOG = logging.getLogger(__name__)
 
 
 class PulpSolver(scheduler_solver.BaseHostSolver):
+
     """A LP based pluggable LP solver implemented using PULP modeler."""
 
     def __init__(self):
@@ -51,7 +52,7 @@ class PulpSolver(scheduler_solver.BaseHostSolver):
         solver_cache = filter_properties['solver_cache']
         # initialize cost matrix
         cost_matrix = [[0 for j in xrange(num_instances + 1)]
-                        for i in xrange(num_hosts)]
+                       for i in xrange(num_hosts)]
         solver_cache['cost_matrix'] = cost_matrix
         cost_objects = [cost() for cost in self.cost_classes]
         cost_objects.sort(key=lambda cost: cost.precedence)
@@ -63,13 +64,13 @@ class PulpSolver(scheduler_solver.BaseHostSolver):
                 precedence_level = cost_object.precedence
             cost_multiplier = cost_object.cost_multiplier()
             this_cost_mat = cost_object.get_extended_cost_matrix(hosts,
-                                                        filter_properties)
+                                                                 filter_properties)
             if not this_cost_mat:
                 continue
             cost_matrix = [[cost_matrix[i][j] +
-                    this_cost_mat[i][j] * cost_multiplier
-                    for j in xrange(num_instances + 1)]
-                    for i in xrange(num_hosts)]
+                            this_cost_mat[i][j] * cost_multiplier
+                            for j in xrange(num_instances + 1)]
+                           for i in xrange(num_hosts)]
         # update cost matrix in the solver cache
         solver_cache['cost_matrix'] = cost_matrix
 
@@ -81,7 +82,7 @@ class PulpSolver(scheduler_solver.BaseHostSolver):
         solver_cache = filter_properties['solver_cache']
         # initialize constraint_matrix
         constraint_matrix = [[True for j in xrange(num_instances + 1)]
-                            for i in xrange(num_hosts)]
+                             for i in xrange(num_hosts)]
         solver_cache['constraint_matrix'] = constraint_matrix
         constraint_objects = [cons() for cons in self.constraint_classes]
         constraint_objects.sort(key=lambda cons: cons.precedence)
@@ -92,12 +93,12 @@ class PulpSolver(scheduler_solver.BaseHostSolver):
                 solver_cache['constraint_matrix'] = constraint_matrix
                 precedence_level = constraint_object.precedence
             this_cons_mat = constraint_object.get_constraint_matrix(hosts,
-                                                        filter_properties)
+                                                                    filter_properties)
             if not this_cons_mat:
                 continue
             for i in xrange(num_hosts):
                 constraint_matrix[i][1:] = [constraint_matrix[i][j + 1] &
-                        this_cons_mat[i][j] for j in xrange(num_instances)]
+                                            this_cons_mat[i][j] for j in xrange(num_instances)]
         # update constraint matrix in the solver cache
         solver_cache['constraint_matrix'] = constraint_matrix
 
@@ -119,7 +120,7 @@ class PulpSolver(scheduler_solver.BaseHostSolver):
         for i in xrange(len(cost_matrix)):
             for j in xrange(len(cost_matrix[i])):
                 new_cost_matrix[i][j] = sign * (
-                                        (cost_matrix[i][j] - offset) ** 2)
+                    (cost_matrix[i][j] - offset) ** 2)
         return new_cost_matrix
 
     def solve(self, hosts, filter_properties):
@@ -134,11 +135,11 @@ class PulpSolver(scheduler_solver.BaseHostSolver):
         num_hosts = len(hosts)
 
         instance_uuids = filter_properties.get('instance_uuids') or [
-                '(unknown_uuid)' + str(i) for i in xrange(num_instances)]
+            '(unknown_uuid)' + str(i) for i in xrange(num_instances)]
 
         filter_properties.setdefault('solver_cache', {})
         filter_properties['solver_cache'].update(
-                {'cost_matrix': [],
+            {'cost_matrix': [],
                 'constraint_matrix': []})
 
         cost_matrix = self._get_cost_matrix(hosts, filter_properties)
@@ -152,49 +153,49 @@ class PulpSolver(scheduler_solver.BaseHostSolver):
         host_keys = ['Host' + str(i) for i in xrange(num_hosts)]
         host_key_map = dict(zip(host_keys, hosts))
         instance_num_keys = ['InstanceNum' + str(i) for
-                            i in xrange(num_instances + 1)]
+                             i in xrange(num_instances + 1)]
         instance_num_key_map = dict(zip(instance_num_keys,
                                         xrange(num_instances + 1)))
 
         # create the pulp variables
         variable_matrix = [
-                [pulp.LpVariable('HI_' + host_key + '_' + instance_num_key,
-                0, 1, constants.LpInteger)
+            [pulp.LpVariable('HI_' + host_key + '_' + instance_num_key,
+                             0, 1, constants.LpInteger)
                 for instance_num_key in instance_num_keys]
-                for host_key in host_keys]
+            for host_key in host_keys]
 
         # create the 'prob' variable to contain the problem data.
         prob = pulp.LpProblem("Host Instance Scheduler Problem",
-                                constants.LpMinimize)
+                              constants.LpMinimize)
 
         # add cost function to pulp solver
         cost_variables = [variable_matrix[i][j] for i in xrange(num_hosts)
-                                        for j in xrange(num_instances + 1)]
+                          for j in xrange(num_instances + 1)]
         cost_coefficients = [cost_matrix[i][j] for i in xrange(num_hosts)
-                                        for j in xrange(num_instances + 1)]
+                             for j in xrange(num_instances + 1)]
         prob += (pulp.lpSum([cost_coefficients[i] * cost_variables[i]
-                for i in xrange(len(cost_variables))]), "Sum_Costs")
+                             for i in xrange(len(cost_variables))]), "Sum_Costs")
 
         # add constraints to pulp solver
         for i in xrange(num_hosts):
             for j in xrange(num_instances + 1):
                 if constraint_matrix[i][j] is False:
                     prob += (variable_matrix[i][j] == 0,
-                            "Cons_Host_%s" % i + "_NumInst_%s" % j)
+                             "Cons_Host_%s" % i + "_NumInst_%s" % j)
 
         # add additional constraints to ensure the problem is valid
         # (1) non-trivial solution: number of all instances == that requested
         prob += (pulp.lpSum([variable_matrix[i][j] * j for i in
-                xrange(num_hosts) for j in xrange(num_instances + 1)]) ==
-                num_instances, "NonTrivialCons")
+                             xrange(num_hosts) for j in xrange(num_instances + 1)]) ==
+                 num_instances, "NonTrivialCons")
         # (2) valid solution: each host is assigned 1 num-instances value
         for i in xrange(num_hosts):
             prob += (pulp.lpSum([variable_matrix[i][j] for j in
-                    xrange(num_instances + 1)]) == 1, "ValidCons_Host_%s" % i)
+                                 xrange(num_instances + 1)]) == 1, "ValidCons_Host_%s" % i)
 
         # The problem is solved using PULP's choice of Solver.
         prob.solve(pulp_solver_classes.PULP_CBC_CMD(
-                maxSeconds=CONF.solver_scheduler.pulp_solver_timeout_seconds))
+            maxSeconds=CONF.solver_scheduler.pulp_solver_timeout_seconds))
 
         # Create host-instance tuples from the solutions.
         if pulp.LpStatus[prob.status] == 'Optimal':
@@ -202,19 +203,19 @@ class PulpSolver(scheduler_solver.BaseHostSolver):
             for v in prob.variables():
                 if v.name.startswith('HI'):
                     (host_key, instance_num_key) = v.name.lstrip('HI').lstrip(
-                                                        '_').split('_')
+                        '_').split('_')
                     if v.varValue == 1:
                         num_insts_on_host[host_key] = (
-                                        instance_num_key_map[instance_num_key])
+                            instance_num_key_map[instance_num_key])
             instances_iter = iter(instance_uuids)
             for host_key in host_keys:
                 num_insts_on_this_host = num_insts_on_host.get(host_key, 0)
                 for i in xrange(num_insts_on_this_host):
                     host_instance_combinations.append(
-                            (host_key_map[host_key], instances_iter.next()))
+                        (host_key_map[host_key], instances_iter.next()))
         else:
-            LOG.warn(_LW("Pulp solver didnot find optimal solution! "
-                    "reason: %s"), pulp.LpStatus[prob.status])
+            LOG.warning(_LW("Pulp solver didnot find optimal solution! "
+                            "reason: %s"), pulp.LpStatus[prob.status])
             host_instance_combinations = []
 
         return host_instance_combinations

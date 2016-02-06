@@ -18,5 +18,6 @@ from nova_solverscheduler.scheduler.solvers import constraints
 
 
 class ActiveHostsConstraint(constraints.BaseFilterConstraint):
+
     """Constraint that only allows active hosts to be selected."""
     host_filter_cls = compute_filter.ComputeFilter

@@ -24,6 +24,7 @@ LOG = logging.getLogger(__name__)
 
 
 class NUMATopologyConstraint(constraints.BaseLinearConstraint):
+
     """Constraint on requested NUMA topology."""
 
     def __init__(self):
@@ -47,23 +48,23 @@ class NUMATopologyConstraint(constraints.BaseLinearConstraint):
         num_instances = filter_properties.get('num_instances')
 
         constraint_matrix = [[True for j in xrange(num_instances)]
-                            for i in xrange(num_hosts)]
+                             for i in xrange(num_hosts)]
 
         for i in xrange(num_hosts):
             host_state = copy.deepcopy(hosts[i])
             acceptable_instance_num = self._get_acceptable_instance_num(
-                    host_state, filter_properties, num_instances)
+                host_state, filter_properties, num_instances)
 
             if acceptable_instance_num < num_instances:
                 inacceptable_num = num_instances - acceptable_instance_num
                 constraint_matrix[i] = (
-                        [True for j in xrange(acceptable_instance_num)] +
-                        [False for j in xrange(inacceptable_num)])
+                    [True for j in xrange(acceptable_instance_num)] +
+                    [False for j in xrange(inacceptable_num)])
 
             LOG.debug("%(host)s can accept %(num)s requested instances "
-                        "according to NUMATopologyConstraint.",
-                        {'host': hosts[i],
-                        'num': acceptable_instance_num})
+                      "according to NUMATopologyConstraint.",
+                      {'host': hosts[i],
+                       'num': acceptable_instance_num})
 
             numa_topology_limit = host_state.limits.get('numa_topology')
             if numa_topology_limit:

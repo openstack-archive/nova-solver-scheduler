@@ -31,7 +31,7 @@ class FastSolver(scheduler_solver.BaseHostSolver):
         solver_cache = filter_properties['solver_cache']
         # initialize cost matrix
         cost_matrix = [[0 for j in xrange(num_instances)]
-                        for i in xrange(num_hosts)]
+                       for i in xrange(num_hosts)]
         solver_cache['cost_matrix'] = cost_matrix
         cost_objects = [cost() for cost in self.cost_classes]
         cost_objects.sort(key=lambda cost: cost.precedence)
@@ -47,9 +47,9 @@ class FastSolver(scheduler_solver.BaseHostSolver):
             if not this_cost_mat:
                 continue
             cost_matrix = [[cost_matrix[i][j] +
-                    this_cost_mat[i][j] * cost_multiplier
-                    for j in xrange(num_instances)]
-                    for i in xrange(num_hosts)]
+                            this_cost_mat[i][j] * cost_multiplier
+                            for j in xrange(num_instances)]
+                           for i in xrange(num_hosts)]
         # update cost matrix in the solver cache
         solver_cache['cost_matrix'] = cost_matrix
 
@@ -61,7 +61,7 @@ class FastSolver(scheduler_solver.BaseHostSolver):
         solver_cache = filter_properties['solver_cache']
         # initialize constraint_matrix
         constraint_matrix = [[True for j in xrange(num_instances)]
-                                    for i in xrange(num_hosts)]
+                             for i in xrange(num_hosts)]
         solver_cache['constraint_matrix'] = constraint_matrix
         constraint_objects = [cons() for cons in self.constraint_classes]
         constraint_objects.sort(key=lambda cons: cons.precedence)
@@ -72,12 +72,12 @@ class FastSolver(scheduler_solver.BaseHostSolver):
                 solver_cache['constraint_matrix'] = constraint_matrix
                 precedence_level = constraint_object.precedence
             this_cons_mat = constraint_object.get_constraint_matrix(hosts,
-                                                        filter_properties)
+                                                                    filter_properties)
             if not this_cons_mat:
                 continue
             constraint_matrix = [[constraint_matrix[i][j] &
-                    this_cons_mat[i][j] for j in xrange(num_instances)]
-                    for i in xrange(num_hosts)]
+                                  this_cons_mat[i][j] for j in xrange(num_instances)]
+                                 for i in xrange(num_hosts)]
         # update constraint matrix in the solver cache
         solver_cache['constraint_matrix'] = constraint_matrix
 
@@ -94,7 +94,7 @@ class FastSolver(scheduler_solver.BaseHostSolver):
 
         filter_properties.setdefault('solver_cache', {})
         filter_properties['solver_cache'].update(
-                {'cost_matrix': [],
+            {'cost_matrix': [],
                 'constraint_matrix': []})
 
         cost_matrix = self._get_cost_matrix(hosts, filter_properties)
@@ -109,7 +109,7 @@ class FastSolver(scheduler_solver.BaseHostSolver):
                     inst_num = j + 1
                     cost_val = cost_matrix[i][j]
                     placement_cost_tuples.append(
-                                            (host_idx, inst_num, cost_val))
+                        (host_idx, inst_num, cost_val))
 
         sorted_placement_costs = sorted(placement_cost_tuples,
                                         key=operator.itemgetter(2))
@@ -133,6 +133,6 @@ class FastSolver(scheduler_solver.BaseHostSolver):
             num = host_inst_alloc[i]
             for n in xrange(num):
                 host_instance_combinations.append(
-                                            (hosts[i], instances_iter.next()))
+                    (hosts[i], instances_iter.next()))
 
         return host_instance_combinations

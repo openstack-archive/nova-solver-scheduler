@@ -25,6 +25,7 @@ LOG = logging.getLogger(__name__)
 
 
 class SameRackConstraint(constraints.BaseLinearConstraint):
+
     """Place instances in the same racks as those of specified instances.
     If the specified instances are in hosts without rack config, then place
     instances in the same hosts as those of specified instances.
@@ -35,7 +36,7 @@ class SameRackConstraint(constraints.BaseLinearConstraint):
         num_instances = filter_properties.get('num_instances')
 
         constraint_matrix = [[True for j in xrange(num_instances)]
-                            for i in xrange(num_hosts)]
+                             for i in xrange(num_hosts)]
 
         scheduler_hints = filter_properties.get('scheduler_hints') or {}
         affinity_uuids = scheduler_hints.get('same_rack', [])
@@ -63,19 +64,20 @@ class SameRackConstraint(constraints.BaseLinearConstraint):
             host_racks = host_racks_map.get(host_name, set([]))
             if host_name in affinity_hosts:
                 LOG.debug(_("%(host)s passed same-rack check."),
-                        {'host': host_name})
+                          {'host': host_name})
                 continue
             elif (len(host_racks) == 0) or any([rack not in affinity_racks
                                                 for rack in host_racks]):
                 constraint_matrix[i] = [False for j in xrange(num_instances)]
             else:
                 LOG.debug(_("%(host)s passed same-rack check."),
-                        {'host': host_name})
+                          {'host': host_name})
 
         return constraint_matrix
 
 
 class DifferentRackConstraint(constraints.BaseLinearConstraint):
+
     """Place instances in different racks as those of specified instances.
     If the specified instances are in hosts without rack config, then place
     instances in different hosts as those of specified instances.
@@ -86,7 +88,7 @@ class DifferentRackConstraint(constraints.BaseLinearConstraint):
         num_instances = filter_properties.get('num_instances')
 
         constraint_matrix = [[True for j in xrange(num_instances)]
-                            for i in xrange(num_hosts)]
+                             for i in xrange(num_hosts)]
 
         scheduler_hints = filter_properties.get('scheduler_hints') or {}
         affinity_uuids = scheduler_hints.get('different_rack', [])
@@ -116,6 +118,6 @@ class DifferentRackConstraint(constraints.BaseLinearConstraint):
                     host_name in affinity_hosts):
                 constraint_matrix[i] = [False for j in xrange(num_instances)]
                 LOG.debug(_("%(host)s didnot pass different-rack check."),
-                        {'host': host_name})
+                          {'host': host_name})
 
         return constraint_matrix

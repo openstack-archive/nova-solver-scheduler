@@ -33,19 +33,19 @@ from nova_solverscheduler.scheduler.solvers import costs as solver_costs
 from nova_solverscheduler.scheduler.solvers.costs import utils as cost_utils
 
 metrics_cost_opts = [
-        cfg.FloatOpt('metrics_cost_multiplier',
-                     default=1.0,
-                     help='Multiplier used for metrics costs.'),
+    cfg.FloatOpt('metrics_cost_multiplier',
+                 default=1.0,
+                 help='Multiplier used for metrics costs.'),
 ]
 
 metrics_weight_opts = [
-       cfg.FloatOpt('weight_multiplier_of_unavailable',
-                     default=(-1.0),
-                     help='If any one of the metrics set by weight_setting '
-                          'is unavailable, the metric weight of the host '
-                          'will be set to (minw + (maxw - minw) * m), '
-                          'where maxw and minw are the max and min weights '
-                          'among all hosts, and m is the multiplier.'),
+    cfg.FloatOpt('weight_multiplier_of_unavailable',
+                 default=(-1.0),
+                 help='If any one of the metrics set by weight_setting '
+                      'is unavailable, the metric weight of the host '
+                      'will be set to (minw + (maxw - minw) * m), '
+                      'where maxw and minw are the max and min weights '
+                      'among all hosts, and m is the multiplier.'),
 ]
 
 CONF = cfg.CONF
@@ -56,6 +56,7 @@ CONF.import_opt('weight_setting', 'nova.scheduler.weights.metrics',
 
 
 class MetricsCost(solver_costs.BaseLinearCost):
+
     def __init__(self):
         self._parse_setting()
 
@@ -90,7 +91,7 @@ class MetricsCost(solver_costs.BaseLinearCost):
             minval = min(numeric_values)
             maxval = max(numeric_values)
             weight_of_unavailable = (minval + (maxval - minval) *
-                                CONF.metrics.weight_multiplier_of_unavailable)
+                                     CONF.metrics.weight_multiplier_of_unavailable)
             for i in range(num_hosts):
                 if host_weights[i] is None:
                     host_weights[i] = weight_of_unavailable
@@ -101,5 +102,5 @@ class MetricsCost(solver_costs.BaseLinearCost):
                                 for j in xrange(num_instances + 1)]
                                 for i in xrange(num_hosts)]
         extended_cost_matrix = cost_utils.normalize_cost_matrix(
-                                                        extended_cost_matrix)
+            extended_cost_matrix)
         return extended_cost_matrix

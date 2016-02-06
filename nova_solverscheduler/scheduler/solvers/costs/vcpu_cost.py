@@ -29,10 +29,10 @@ from nova_solverscheduler.scheduler.solvers import costs as solver_costs
 from nova_solverscheduler.scheduler.solvers.costs import utils
 
 vcpu_cost_opts = [
-        cfg.FloatOpt('vcpu_cost_multiplier',
-                     default=1.0,
-                     help='Multiplier used for vcpu costs. Negative '
-                          'numbers mean to stack vs spread.'),
+    cfg.FloatOpt('vcpu_cost_multiplier',
+                 default=1.0,
+                 help='Multiplier used for vcpu costs. Negative '
+                 'numbers mean to stack vs spread.'),
 ]
 
 CONF = cfg.CONF
@@ -53,15 +53,15 @@ class VcpuCost(solver_costs.BaseLinearCost):
         instance_type = filter_properties.get('instance_type') or {}
         requested_vcpus = instance_type.get('vcpus', 0)
         if requested_vcpus <= 0:
-            LOG.warn(_LW("Requested instances\' vCPU number is 0 or invalid, "
-                    "default value (0) is used."))
+            LOG.warning(_LW("Requested instances\' vCPU number is 0 or invalid, "
+                            "default value (0) is used."))
 
         remaining_vcpus_list = []
         for i in xrange(num_hosts):
             vcpus_total = hosts[i].vcpus_total
             vcpus_used = hosts[i].vcpus_used
             if not vcpus_total:
-                LOG.warn(_LW("vCPUs of %(host)s not set; assuming CPU "
+                LOG.warning(_LW("vCPUs of %(host)s not set; assuming CPU "
                             "collection broken."), {'host': hosts[i]})
                 vcpus_total = 0
             remaining_vcpus = vcpus_total - vcpus_used
@@ -72,17 +72,17 @@ class VcpuCost(solver_costs.BaseLinearCost):
 
         if requested_vcpus == 0:
             extended_cost_matrix = [
-                    [(-remaining_vcpus_list[i])
+                [(-remaining_vcpus_list[i])
                     for j in xrange(num_instances + 1)]
-                    for i in xrange(num_hosts)]
+                for i in xrange(num_hosts)]
         else:
             # we use int approximation here to avoid scaling problems after
             # normalization, in the case that the free vcpus in all hosts are
             # of very small values
             extended_cost_matrix = [
-                    [-int(remaining_vcpus_list[i] / requested_vcpus) + j
+                [-int(remaining_vcpus_list[i] / requested_vcpus) + j
                     for j in xrange(num_instances + 1)]
-                    for i in xrange(num_hosts)]
+                for i in xrange(num_hosts)]
         extended_cost_matrix = utils.normalize_cost_matrix(
-                                                        extended_cost_matrix)
+            extended_cost_matrix)
         return extended_cost_matrix

@@ -25,19 +25,19 @@ from nova.scheduler.filters.utils import *  # noqa
 
 rack_config_file_opts = [
     cfg.StrOpt('rack_config',
-            default='',
-            help='The config file specifying physical rack configuration. By '
-                 'default Cisco\'s Neutron ML2 plugin config is supported, '
-                 'otherwise the format of the config file needs to be '
-                 'compatible with Cisco\'s Neutron ML2 plugin config file.'),
+               default='',
+               help='The config file specifying physical rack configuration. By '
+               'default Cisco\'s Neutron ML2 plugin config is supported, '
+               'otherwise the format of the config file needs to be '
+               'compatible with Cisco\'s Neutron ML2 plugin config file.'),
     cfg.StrOpt('rack_config_prefix',
-            default='',
-            help='The section name in rack config file should start with the '
-                 'prefix, so the config parser can recognize the section as '
-                 'information of a specific rack or ToR switch. For example, '
-                 'in Cisco\'s Neutron ML2 plugin config a section name like '
-                 '[ml2_mech_cisco_nexus:1.1.1.1] identifies a specific ToR '
-                 'switch, then the prefix is \'ml2_mech_cisco_nexus\'.')
+               default='',
+               help='The section name in rack config file should start with the '
+               'prefix, so the config parser can recognize the section as '
+               'information of a specific rack or ToR switch. For example, '
+               'in Cisco\'s Neutron ML2 plugin config a section name like '
+               '[ml2_mech_cisco_nexus:1.1.1.1] identifies a specific ToR '
+               'switch, then the prefix is \'ml2_mech_cisco_nexus\'.')
 ]
 
 CONF = cfg.CONF
@@ -102,7 +102,7 @@ def get_host_racks_map(hosts):
         if host_racks:
             host_racks_map.setdefault(host_name, set())
             host_racks_map[host_name] = host_racks_map[host_name].union(
-                                                                    host_racks)
+                host_racks)
 
     if not host_racks_map:
         host_racks_map = get_host_racks_config()

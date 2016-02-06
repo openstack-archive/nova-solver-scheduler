@@ -18,5 +18,6 @@ from nova_solverscheduler.scheduler.solvers import constraints
 
 
 class TypeAffinityConstraint(constraints.BaseFilterConstraint):
+
     """TypeAffinityConstraint doesn't allow more then one VM type per host."""
     host_filter_cls = type_filter.TypeAffinityFilter

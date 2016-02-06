@@ -18,6 +18,7 @@ from nova_solverscheduler.scheduler.solvers import constraints
 
 
 class AvailabilityZoneConstraint(constraints.BaseFilterConstraint):
+
     """Selects Hosts by availability zone.
 
     Works with aggregate metadata availability zones, using the key

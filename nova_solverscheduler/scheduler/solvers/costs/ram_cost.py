@@ -29,10 +29,10 @@ from nova_solverscheduler.scheduler.solvers import costs as solver_costs
 from nova_solverscheduler.scheduler.solvers.costs import utils
 
 ram_cost_opts = [
-        cfg.FloatOpt('ram_cost_multiplier',
-                     default=1.0,
-                     help='Multiplier used for ram costs. Negative '
-                          'numbers mean to stack vs spread.'),
+    cfg.FloatOpt('ram_cost_multiplier',
+                 default=1.0,
+                 help='Multiplier used for ram costs. Negative '
+                 'numbers mean to stack vs spread.'),
 ]
 
 CONF = cfg.CONF
@@ -53,25 +53,25 @@ class RamCost(solver_costs.BaseLinearCost):
         instance_type = filter_properties.get('instance_type') or {}
         requested_ram = instance_type.get('memory_mb', 0)
         if 'memory_mb' not in instance_type:
-            LOG.warn(_LW("No information about requested instances\' RAM size "
-                    "was found, default value (0) is used."))
+            LOG.warning(_LW("No information about requested instances\' RAM size "
+                            "was found, default value (0) is used."))
 
         extended_cost_matrix = [[0 for j in xrange(num_instances + 1)]
                                 for i in xrange(num_hosts)]
 
         if requested_ram == 0:
             extended_cost_matrix = [
-                    [(-hosts[i].free_ram_mb)
+                [(-hosts[i].free_ram_mb)
                     for j in xrange(num_instances + 1)]
-                    for i in xrange(num_hosts)]
+                for i in xrange(num_hosts)]
         else:
             # we use int approximation here to avoid scaling problems after
             # normalization, in the case that the free ram in all hosts are
             # of very small values
             extended_cost_matrix = [
-                    [-int(hosts[i].free_ram_mb / requested_ram) + j
+                [-int(hosts[i].free_ram_mb / requested_ram) + j
                     for j in xrange(num_instances + 1)]
-                    for i in xrange(num_hosts)]
+                for i in xrange(num_hosts)]
         extended_cost_matrix = utils.normalize_cost_matrix(
-                                                        extended_cost_matrix)
+            extended_cost_matrix)
         return extended_cost_matrix

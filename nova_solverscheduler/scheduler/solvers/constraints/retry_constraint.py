@@ -18,5 +18,6 @@ from nova_solverscheduler.scheduler.solvers import constraints
 
 
 class RetryConstraint(constraints.BaseFilterConstraint):
+
     """Selects nodes that have not been attempted for scheduling purposes."""
     host_filter_cls = retry_filter.RetryFilter

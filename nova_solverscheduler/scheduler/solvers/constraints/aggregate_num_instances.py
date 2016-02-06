@@ -18,7 +18,7 @@ from oslo_log import log as logging
 
 from nova.i18n import _LW
 from nova_solverscheduler.scheduler.solvers.constraints \
-        import num_instances_constraint
+    import num_instances_constraint
 from nova_solverscheduler.scheduler.solvers import utils
 
 CONF = cfg.CONF
@@ -30,6 +30,7 @@ LOG = logging.getLogger(__name__)
 
 class AggregateNumInstancesConstraint(
         num_instances_constraint.NumInstancesConstraint):
+
     """AggregateNumInstancesConstraint with per-aggregate max num instances
     per host.
 
@@ -39,11 +40,11 @@ class AggregateNumInstancesConstraint(
 
     def _get_max_instances_per_host(self, host_state, filter_properties):
         aggregate_vals = utils.aggregate_values_from_key(
-                host_state, 'max_instances_per_host')
+            host_state, 'max_instances_per_host')
 
         try:
             value = utils.validate_num_values(
-                    aggregate_vals, CONF.max_instances_per_host, cast_to=int)
+                aggregate_vals, CONF.max_instances_per_host, cast_to=int)
         except ValueError as e:
             LOG.warning(_LW("Could not decode max_instances_per_host: '%s'"),
                         e)

@@ -21,9 +21,9 @@ from nova_solverscheduler.scheduler.solvers import constraints
 from nova_solverscheduler.scheduler.solvers import utils as solver_utils
 
 tenant_rack_opts = [
-        cfg.IntOpt('max_racks_per_tenant',
-                   default=1,
-                   help='Maximum number of racks each tenant can have.'),
+    cfg.IntOpt('max_racks_per_tenant',
+               default=1,
+               help='Maximum number of racks each tenant can have.'),
 ]
 
 CONF = cfg.CONF
@@ -49,7 +49,7 @@ def _get_sorted_racks(racks, hosts, host_racks_map, filter_properties):
         return list(racks)
     if not cost_matrix:
         cost_matrix = [[0 for j in xrange(num_instances)]
-                        for i in xrange(num_hosts)]
+                       for i in xrange(num_hosts)]
 
     rack_avail_insts = {}
     rack_avg_costs = {}
@@ -81,8 +81,8 @@ def _get_sorted_racks(racks, hosts, host_racks_map, filter_properties):
                                         cost_matrix[i][0]) / n
 
     rack_score_tuples = [
-            (rack, rack_avail_insts[rack], rack_avg_costs[rack]) for
-            rack in rack_set]
+        (rack, rack_avail_insts[rack], rack_avg_costs[rack]) for
+        rack in rack_set]
 
     sorted_rack_tuples = sorted(rack_score_tuples, key=mixed_order)
     sorted_racks = [rack for (rack, inst, cost) in sorted_rack_tuples]
@@ -91,6 +91,7 @@ def _get_sorted_racks(racks, hosts, host_racks_map, filter_properties):
 
 
 class TenantRackConstraint(constraints.BaseLinearConstraint):
+
     """Limit the maximum number of racks that instances of each tenant can
     spread across.
     If a host doesnot have rack config, it won't be filtered out by this
@@ -104,7 +105,7 @@ class TenantRackConstraint(constraints.BaseLinearConstraint):
         num_instances = filter_properties.get('num_instances')
 
         constraint_matrix = [[True for j in xrange(num_instances)]
-                            for i in xrange(num_hosts)]
+                             for i in xrange(num_hosts)]
 
         max_racks = CONF.max_racks_per_tenant
         project_id = filter_properties['project_id']
@@ -132,7 +133,7 @@ class TenantRackConstraint(constraints.BaseLinearConstraint):
                 additional_racks = list(other_racks)
             else:
                 sorted_other_racks = _get_sorted_racks(
-                        other_racks, hosts, host_racks_map, filter_properties)
+                    other_racks, hosts, host_racks_map, filter_properties)
                 additional_racks = sorted_other_racks[0:additional_rack_num]
 
         acceptable_racks = project_racks.union(additional_racks)
@@ -144,11 +145,11 @@ class TenantRackConstraint(constraints.BaseLinearConstraint):
                 constraint_matrix[i] = [False for j in xrange(num_instances)]
 
                 LOG.debug(_("%(host)s cannot accept requested instances "
-                        "according to TenantRackConstraint."),
-                        {'host': host_name})
+                            "according to TenantRackConstraint."),
+                          {'host': host_name})
             else:
                 LOG.debug(_("%(host)s can accept requested instances "
-                        "according to TenantRackConstraint."),
-                        {'host': host_name})
+                            "according to TenantRackConstraint."),
+                          {'host': host_name})
 
         return constraint_matrix

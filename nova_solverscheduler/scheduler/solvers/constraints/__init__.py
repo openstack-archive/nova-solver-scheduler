@@ -22,6 +22,7 @@ from nova.scheduler import filters
 
 
 class BaseConstraint(object):
+
     """Base class for constraints."""
 
     precedence = 0
@@ -32,6 +33,7 @@ class BaseConstraint(object):
 
 
 class BaseLinearConstraint(BaseConstraint):
+
     """Base class of LP constraint."""
 
     def __init__(self):
@@ -59,6 +61,7 @@ class BaseLinearConstraint(BaseConstraint):
 
 
 class BaseFilterConstraint(BaseLinearConstraint):
+
     """Base class for constraints that correspond to 1-time host filters."""
 
     # override this in sub classes
@@ -73,11 +76,11 @@ class BaseFilterConstraint(BaseLinearConstraint):
         num_instances = filter_properties.get('num_instances')
 
         constraint_matrix = [[True for j in xrange(num_instances)]
-                            for i in xrange(num_hosts)]
+                             for i in xrange(num_hosts)]
 
         for i in xrange(num_hosts):
             host_passes = self.host_filter.host_passes(
-                                            hosts[i], filter_properties)
+                hosts[i], filter_properties)
             if not host_passes:
                 constraint_matrix[i] = [False for j in xrange(num_instances)]
 
@@ -85,6 +88,7 @@ class BaseFilterConstraint(BaseLinearConstraint):
 
 
 class ConstraintHandler(loadables.BaseLoader):
+
     def __init__(self):
         super(ConstraintHandler, self).__init__(BaseConstraint)
 

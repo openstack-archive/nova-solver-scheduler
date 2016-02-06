@@ -18,6 +18,7 @@ from nova_solverscheduler.scheduler.solvers import constraints
 
 
 class MetricsConstraint(constraints.BaseFilterConstraint):
+
     """This constraint is used to filter out those hosts which don't have the
     corresponding metrics.
     """

@@ -27,6 +27,7 @@ LOG = logging.getLogger(__name__)
 
 
 class RamConstraint(constraints.BaseLinearConstraint):
+
     """Constraint of the total ram demand acceptable on each host."""
 
     def _get_ram_allocation_ratio(self, host_state, filter_properties):
@@ -37,22 +38,22 @@ class RamConstraint(constraints.BaseLinearConstraint):
         num_instances = filter_properties.get('num_instances')
 
         constraint_matrix = [[True for j in xrange(num_instances)]
-                            for i in xrange(num_hosts)]
+                             for i in xrange(num_hosts)]
 
         # get requested ram
         instance_type = filter_properties.get('instance_type') or {}
         requested_ram = instance_type.get('memory_mb', 0)
         if 'memory_mb' not in instance_type:
-            LOG.warn(_LW("No information about requested instances\' RAM size "
-                    "was found, default value (0) is used."))
+            LOG.warning(_LW("No information about requested instances\' RAM size "
+                            "was found, default value (0) is used."))
         if requested_ram <= 0:
-            LOG.warn(_LW("RamConstraint is skipped because requested "
+            LOG.warning(_LW("RamConstraint is skipped because requested "
                         "instance RAM size is 0 or invalid."))
             return constraint_matrix
 
         for i in xrange(num_hosts):
             ram_allocation_ratio = self._get_ram_allocation_ratio(
-                                                hosts[i], filter_properties)
+                hosts[i], filter_properties)
             # get available ram
             free_ram_mb = hosts[i].free_ram_mb
             total_usable_ram_mb = hosts[i].total_usable_ram_mb
@@ -64,13 +65,13 @@ class RamConstraint(constraints.BaseLinearConstraint):
             if acceptable_num_instances < num_instances:
                 inacceptable_num = num_instances - acceptable_num_instances
                 constraint_matrix[i] = (
-                        [True for j in xrange(acceptable_num_instances)] +
-                        [False for j in xrange(inacceptable_num)])
+                    [True for j in xrange(acceptable_num_instances)] +
+                    [False for j in xrange(inacceptable_num)])
 
             LOG.debug("%(host)s can accept %(num)s requested instances "
-                        "according to RamConstraint.",
-                        {'host': hosts[i],
-                        'num': acceptable_num_instances})
+                      "according to RamConstraint.",
+                      {'host': hosts[i],
+                       'num': acceptable_num_instances})
 
             hosts[i].limits['memory_mb'] = memory_mb_limit
 

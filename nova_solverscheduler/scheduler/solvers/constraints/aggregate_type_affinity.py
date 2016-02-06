@@ -18,6 +18,7 @@ from nova_solverscheduler.scheduler.solvers import constraints
 
 
 class AggregateTypeAffinityConstraint(constraints.BaseFilterConstraint):
+
     """AggregateTypeAffinityFilter limits instance_type by aggregate
 
     return True if no instance_type key is set or if the aggregate metadata

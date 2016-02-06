@@ -27,6 +27,7 @@ LOG = logging.getLogger(__name__)
 
 
 class DiskConstraint(constraints.BaseLinearConstraint):
+
     """Constraint of the maximum total disk demand acceptable on each host."""
 
     def _get_disk_allocation_ratio(self, host_state, filter_properties):
@@ -37,26 +38,26 @@ class DiskConstraint(constraints.BaseLinearConstraint):
         num_instances = filter_properties.get('num_instances')
 
         constraint_matrix = [[True for j in xrange(num_instances)]
-                            for i in xrange(num_hosts)]
+                             for i in xrange(num_hosts)]
 
         # get requested disk
         instance_type = filter_properties.get('instance_type') or {}
         requested_disk = (1024 * (instance_type.get('root_gb', 0) +
                                   instance_type.get('ephemeral_gb', 0)) +
-                                  instance_type.get('swap', 0))
+                          instance_type.get('swap', 0))
         for inst_type_key in ['root_gb', 'ephemeral_gb', 'swap']:
             if inst_type_key not in instance_type:
-                LOG.warn(_LW("Disk information of requested instances\' %s "
-                        "is incomplete, use 0 as the requested size."),
-                        inst_type_key)
+                LOG.warning(_LW("Disk information of requested instances\' %s "
+                                "is incomplete, use 0 as the requested size."),
+                            inst_type_key)
         if requested_disk <= 0:
-            LOG.warn(_LW("DiskConstraint is skipped because requested "
+            LOG.warning(_LW("DiskConstraint is skipped because requested "
                         "instance disk size is 0 or invalid."))
             return constraint_matrix
 
         for i in xrange(num_hosts):
             disk_allocation_ratio = self._get_disk_allocation_ratio(
-                                                hosts[i], filter_properties)
+                hosts[i], filter_properties)
             # get usable disk
             free_disk_mb = hosts[i].free_disk_mb
             total_usable_disk_mb = hosts[i].total_usable_disk_gb * 1024
@@ -68,13 +69,13 @@ class DiskConstraint(constraints.BaseLinearConstraint):
             if acceptable_num_instances < num_instances:
                 inacceptable_num = (num_instances - acceptable_num_instances)
                 constraint_matrix[i] = (
-                        [True for j in xrange(acceptable_num_instances)] +
-                        [False for j in xrange(inacceptable_num)])
+                    [True for j in xrange(acceptable_num_instances)] +
+                    [False for j in xrange(inacceptable_num)])
 
             LOG.debug("%(host)s can accept %(num)s requested instances "
-                        "according to DiskConstraint.",
-                        {'host': hosts[i],
-                        'num': acceptable_num_instances})
+                      "according to DiskConstraint.",
+                      {'host': hosts[i],
+                       'num': acceptable_num_instances})
 
             disk_gb_limit = disk_mb_limit / 1024
             hosts[i].limits['disk_gb'] = disk_gb_limit

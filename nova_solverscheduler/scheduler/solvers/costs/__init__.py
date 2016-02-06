@@ -21,6 +21,7 @@ from nova import loadables
 
 
 class BaseCost(object):
+
     """Base class for cost."""
 
     precedence = 0
@@ -40,6 +41,7 @@ class BaseCost(object):
 
 
 class BaseLinearCost(BaseCost):
+
     """Base class of LP cost."""
 
     def __init__(self):
@@ -70,6 +72,7 @@ class BaseLinearCost(BaseCost):
 
 
 class CostHandler(loadables.BaseLoader):
+
     def __init__(self):
         super(CostHandler, self).__init__(BaseCost)
 

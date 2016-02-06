@@ -24,6 +24,7 @@ LOG = logging.getLogger(__name__)
 
 
 class PciPassthroughConstraint(constraints.BaseLinearConstraint):
+
     """Constraint that schedules instances on a host if the host has devices
     to meet the device requests in the 'extra_specs' for the flavor.
 
@@ -38,7 +39,7 @@ class PciPassthroughConstraint(constraints.BaseLinearConstraint):
     """
 
     def _get_acceptable_pci_requests_times(self, max_times_to_try,
-                                                pci_requests, host_pci_stats):
+                                           pci_requests, host_pci_stats):
         acceptable_times = 0
         while acceptable_times < max_times_to_try:
             if host_pci_stats.support_requests(pci_requests):
@@ -53,29 +54,29 @@ class PciPassthroughConstraint(constraints.BaseLinearConstraint):
         num_instances = filter_properties.get('num_instances')
 
         constraint_matrix = [[True for j in xrange(num_instances)]
-                            for i in xrange(num_hosts)]
+                             for i in xrange(num_hosts)]
 
         pci_requests = filter_properties.get('pci_requests')
         if not pci_requests:
-            LOG.warn(_LW("PciPassthroughConstraint check is skipped because "
+            LOG.warning(_LW("PciPassthroughConstraint check is skipped because "
                         "requested instance PCI requests is unavailable."))
             return constraint_matrix
 
         for i in xrange(num_hosts):
             host_pci_stats = copy.deepcopy(hosts[i].pci_stats)
             acceptable_num_instances = (
-                    self._get_acceptable_pci_requests_times(num_instances,
-                                                pci_requests, host_pci_stats))
+                self._get_acceptable_pci_requests_times(num_instances,
+                                                        pci_requests, host_pci_stats))
 
             if acceptable_num_instances < num_instances:
                 inacceptable_num = num_instances - acceptable_num_instances
                 constraint_matrix[i] = (
-                        [True for j in xrange(acceptable_num_instances)] +
-                        [False for j in xrange(inacceptable_num)])
+                    [True for j in xrange(acceptable_num_instances)] +
+                    [False for j in xrange(inacceptable_num)])
 
             LOG.debug("%(host)s can accept %(num)s requested instances "
-                        "according to PciPassthroughConstraint.",
-                        {'host': hosts[i],
-                        'num': acceptable_num_instances})
+                      "according to PciPassthroughConstraint.",
+                      {'host': hosts[i],
+                       'num': acceptable_num_instances})
 
         return constraint_matrix

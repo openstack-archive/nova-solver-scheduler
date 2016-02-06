@@ -27,6 +27,7 @@ LOG = logging.getLogger(__name__)
 
 
 class AggregateRamConstraint(ram_constraint.RamConstraint):
+
     """AggregateRamConstraint with per-aggregate ram subscription flag.
 
     Fall back to global ram_allocation_ratio if no per-aggregate setting found.
@@ -34,11 +35,11 @@ class AggregateRamConstraint(ram_constraint.RamConstraint):
 
     def _get_ram_allocation_ratio(self, host_state, filter_properties):
         aggregate_vals = utils.aggregate_values_from_key(
-                host_state, 'ram_allocation_ratio')
+            host_state, 'ram_allocation_ratio')
 
         try:
             ratio = utils.validate_num_values(
-                    aggregate_vals, CONF.ram_allocation_ratio, cast_to=float)
+                aggregate_vals, CONF.ram_allocation_ratio, cast_to=float)
         except ValueError as e:
             LOG.warning(_LW("Could not decode ram_allocation_ratio: '%s'"), e)
             ratio = CONF.ram_allocation_ratio
