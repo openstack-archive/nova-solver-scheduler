@@ -23,6 +23,7 @@ LOG = logging.getLogger(__name__)
 
 
 class ExactDiskConstraint(constraints.BaseLinearConstraint):
+
     """Constraint that selects hosts with exact amount of disk space."""
 
     def get_constraint_matrix(self, hosts, filter_properties):
@@ -30,18 +31,18 @@ class ExactDiskConstraint(constraints.BaseLinearConstraint):
         num_instances = filter_properties.get('num_instances')
 
         constraint_matrix = [[True for j in xrange(num_instances)]
-                            for i in xrange(num_hosts)]
+                             for i in xrange(num_hosts)]
 
         # get requested disk
         instance_type = filter_properties.get('instance_type') or {}
         requested_disk = (1024 * (instance_type.get('root_gb', 0) +
                                   instance_type.get('ephemeral_gb', 0)) +
-                                  instance_type.get('swap', 0))
+                          instance_type.get('swap', 0))
         for inst_type_key in ['root_gb', 'ephemeral_gb', 'swap']:
             if inst_type_key not in instance_type:
                 LOG.warning(_LW("Disk information of requested instances\' %s "
-                        "is incomplete, use 0 as the requested size."),
-                        inst_type_key)
+                                "is incomplete, use 0 as the requested size."),
+                            inst_type_key)
         if requested_disk <= 0:
             LOG.warning(_LW("ExactDiskConstraint is skipped because requested "
                         "instance disk size is 0 or invalid."))
@@ -50,7 +51,7 @@ class ExactDiskConstraint(constraints.BaseLinearConstraint):
         for i in xrange(num_hosts):
             if requested_disk == hosts[i].free_disk_mb:
                 constraint_matrix[i] = (
-                        [True] + [False for j in xrange(num_instances - 1)])
+                    [True] + [False for j in xrange(num_instances - 1)])
             else:
                 constraint_matrix[i] = [False for j in xrange(num_instances)]
                 LOG.debug("%(host)s does not have exactly %(requested_disk)s "

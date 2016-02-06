@@ -21,10 +21,10 @@ from nova_solverscheduler.scheduler.solvers import costs as solver_costs
 from nova_solverscheduler.scheduler.solvers import utils as solver_utils
 
 affinity_cost_opts = [
-        cfg.FloatOpt('tenant_rack_affinity_cost_multiplier',
-                     default=1.0,
-                     help='Multiplier used for tenant rack affinity cost. '
-                          'Must be a positive number.'),
+    cfg.FloatOpt('tenant_rack_affinity_cost_multiplier',
+                 default=1.0,
+                 help='Multiplier used for tenant rack affinity cost. '
+                 'Must be a positive number.'),
 ]
 
 CONF = cfg.CONF
@@ -34,6 +34,7 @@ LOG = logging.getLogger(__name__)
 
 
 class TenantRackAffinityCost(solver_costs.BaseLinearCost):
+
     """Tenant Rack Affinity Cost tends to let scheduler place instances in
     the racks that contain existing instances of the tenant.
     If a rack has existing instances of the same tenant as that making request,
@@ -75,9 +76,9 @@ class TenantRackAffinityCost(solver_costs.BaseLinearCost):
             if (not any([rack in affinity_racks for rack in host_racks])) and (
                     host_name not in affinity_hosts):
                 extended_cost_matrix[i] = [1 for j
-                                            in xrange(num_instances + 1)]
+                                           in xrange(num_instances + 1)]
             else:
                 LOG.debug(_("%(host)s is in tenant affinity rack."),
-                        {'host': host_name})
+                          {'host': host_name})
 
         return extended_cost_matrix

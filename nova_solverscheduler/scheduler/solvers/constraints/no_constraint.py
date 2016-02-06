@@ -17,6 +17,7 @@ from nova_solverscheduler.scheduler.solvers import constraints
 
 
 class NoConstraint(constraints.BaseLinearConstraint):
+
     """No-op constraint that returns empty linear constraint components."""
 
     def get_constraint_matrix(self, hosts, filter_properties):
@@ -24,6 +25,6 @@ class NoConstraint(constraints.BaseLinearConstraint):
         num_instances = filter_properties.get('num_instances')
 
         constraint_matrix = [[True for j in xrange(num_instances)]
-                            for i in xrange(num_hosts)]
+                             for i in xrange(num_hosts)]
 
         return constraint_matrix

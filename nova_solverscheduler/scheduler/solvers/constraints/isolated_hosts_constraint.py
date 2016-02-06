@@ -18,5 +18,6 @@ from nova_solverscheduler.scheduler.solvers import constraints
 
 
 class IsolatedHostsConstraint(constraints.BaseFilterConstraint):
+
     """Keep specified images to selected hosts."""
     host_filter_cls = isolated_hosts_filter.IsolatedHostsFilter

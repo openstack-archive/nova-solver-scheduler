@@ -23,14 +23,14 @@ from nova_solverscheduler.scheduler.solvers import costs as solver_costs
 from nova_solverscheduler.scheduler.solvers import utils as solver_utils
 
 affinity_cost_opts = [
-        cfg.FloatOpt('affinity_cost_multiplier',
-                     default=1.0,
-                     help='Multiplier used for affinity cost. Must be a '
-                          'positive number.'),
-        cfg.FloatOpt('anti_affinity_cost_multiplier',
-                     default=1.0,
-                     help='Multiplier used for anti-affinity cost. Must be '
-                          'a positive number.'),
+    cfg.FloatOpt('affinity_cost_multiplier',
+                 default=1.0,
+                 help='Multiplier used for affinity cost. Must be a '
+                 'positive number.'),
+    cfg.FloatOpt('anti_affinity_cost_multiplier',
+                 default=1.0,
+                 help='Multiplier used for anti-affinity cost. Must be '
+                 'a positive number.'),
 ]
 
 CONF = cfg.CONF
@@ -78,7 +78,7 @@ class AffinityCost(solver_costs.BaseLinearCost):
                 if solver_utils.instance_uuids_overlap(hosts[i],
                                                        affinity_uuids):
                     extended_cost_matrix[i] = [float(-j) / multiplier for j in
-                                                    xrange(num_instances + 1)]
+                                               xrange(num_instances + 1)]
         else:
             extended_cost_matrix = [[0 for j in xrange(num_instances + 1)]
                                     for i in xrange(num_hosts)]
@@ -125,7 +125,7 @@ class AntiAffinityCost(solver_costs.BaseLinearCost):
                 if solver_utils.instance_uuids_overlap(hosts[i],
                                                        affinity_uuids):
                     extended_cost_matrix[i] = [1 + (float(j) / multiplier)
-                                        for j in xrange(num_instances + 1)]
+                                               for j in xrange(num_instances + 1)]
         else:
             extended_cost_matrix = [[0 for j in xrange(num_instances + 1)]
                                     for i in xrange(num_hosts)]

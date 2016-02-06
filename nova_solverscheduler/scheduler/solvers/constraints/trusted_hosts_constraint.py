@@ -18,6 +18,7 @@ from nova_solverscheduler.scheduler.solvers import constraints
 
 
 class TrustedHostsConstraint(constraints.BaseFilterConstraint):
+
     """Constraint to add support for Trusted Computing Pools.
 
     Allows a host to be selected by scheduler only when the integrity (trust)

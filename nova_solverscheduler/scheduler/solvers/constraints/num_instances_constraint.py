@@ -20,12 +20,13 @@ from nova_solverscheduler.scheduler.solvers import constraints
 
 CONF = cfg.CONF
 CONF.import_opt("max_instances_per_host",
-        "nova.scheduler.filters.num_instances_filter")
+                "nova.scheduler.filters.num_instances_filter")
 
 LOG = logging.getLogger(__name__)
 
 
 class NumInstancesConstraint(constraints.BaseLinearConstraint):
+
     """Constraint that specifies the maximum number of instances that
     each host can launch.
     """
@@ -38,7 +39,7 @@ class NumInstancesConstraint(constraints.BaseLinearConstraint):
         num_instances = filter_properties.get('num_instances')
 
         constraint_matrix = [[True for j in xrange(num_instances)]
-                            for i in xrange(num_hosts)]
+                             for i in xrange(num_hosts)]
 
         for i in xrange(num_hosts):
             max_instances = self._get_max_instances_per_host(hosts[i],
@@ -50,12 +51,12 @@ class NumInstancesConstraint(constraints.BaseLinearConstraint):
             if acceptable_num_instances < num_instances:
                 inacceptable_num = num_instances - acceptable_num_instances
                 constraint_matrix[i] = (
-                        [True for j in xrange(acceptable_num_instances)] +
-                        [False for j in xrange(inacceptable_num)])
+                    [True for j in xrange(acceptable_num_instances)] +
+                    [False for j in xrange(inacceptable_num)])
 
             LOG.debug("%(host)s can accept %(num)s requested instances "
-                        "according to NumInstancesConstraint.",
-                        {'host': hosts[i],
-                        'num': acceptable_num_instances})
+                      "according to NumInstancesConstraint.",
+                      {'host': hosts[i],
+                       'num': acceptable_num_instances})
 
         return constraint_matrix

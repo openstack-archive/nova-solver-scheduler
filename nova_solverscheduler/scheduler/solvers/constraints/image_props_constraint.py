@@ -18,6 +18,7 @@ from nova_solverscheduler.scheduler.solvers import constraints
 
 
 class ImagePropertiesConstraint(constraints.BaseFilterConstraint):
+
     """Select compute nodes that satisfy instance image properties.
 
     The ImagePropertiesConstraint selects compute nodes that satisfy

@@ -18,6 +18,7 @@ from nova_solverscheduler.scheduler.solvers import constraints
 
 
 class JsonConstraint(constraints.BaseFilterConstraint):
+
     """Constraint to allow simple JSON-based grammar for
     selecting hosts.
     """

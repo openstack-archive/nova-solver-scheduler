@@ -24,13 +24,13 @@ from nova_solverscheduler.scheduler.solvers import costs
 from nova_solverscheduler import solver_scheduler_exception as exception
 
 scheduler_solver_opts = [
-        cfg.ListOpt('scheduler_solver_costs',
-                    default=['RamCost'],
-                    help='Which cost matrices to use in the '
-                         'scheduler solver.'),
-        cfg.ListOpt('scheduler_solver_constraints',
-                    default=['ActiveHostsConstraint'],
-                    help='Which constraints to use in scheduler solver'),
+    cfg.ListOpt('scheduler_solver_costs',
+                default=['RamCost'],
+                help='Which cost matrices to use in the '
+                'scheduler solver.'),
+    cfg.ListOpt('scheduler_solver_constraints',
+                default=['ActiveHostsConstraint'],
+                help='Which constraints to use in scheduler solver'),
 ]
 
 CONF = cfg.CONF
@@ -38,6 +38,7 @@ CONF.register_opts(scheduler_solver_opts, group='solver_scheduler')
 
 
 class BaseHostSolver(object):
+
     """Base class for host constraint solvers."""
 
     def __init__(self):
@@ -54,7 +55,7 @@ class BaseHostSolver(object):
         for cost in expected_costs:
             if cost in all_cost_names:
                 cost_classes.append(all_cost_classes[
-                                                all_cost_names.index(cost)])
+                    all_cost_names.index(cost)])
             else:
                 bad_cost_names.append(cost)
         if bad_cost_names:
@@ -70,17 +71,17 @@ class BaseHostSolver(object):
         all_constraint_classes = constraint_handler.get_all_classes()
         all_constraint_names = [c.__name__ for c in all_constraint_classes]
         expected_constraints = (
-                CONF.solver_scheduler.scheduler_solver_constraints)
+            CONF.solver_scheduler.scheduler_solver_constraints)
         for constraint in expected_constraints:
             if constraint in all_constraint_names:
                 constraint_classes.append(all_constraint_classes[
-                                    all_constraint_names.index(constraint)])
+                    all_constraint_names.index(constraint)])
             else:
                 bad_constraint_names.append(constraint)
         if bad_constraint_names:
             msg = ", ".join(bad_constraint_names)
             raise exception.SchedulerSolverConstraintNotFound(
-                                                        constraint_name=msg)
+                constraint_name=msg)
         return constraint_classes
 
     def solve(self, hosts, filter_properties):

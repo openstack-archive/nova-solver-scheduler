@@ -18,5 +18,6 @@ from nova_solverscheduler.scheduler.solvers import constraints
 
 
 class ComputeCapabilitiesConstraint(constraints.BaseFilterConstraint):
+
     """Hard-coded to work with InstanceType records."""
     host_filter_cls = compute_capabilities_filter.ComputeCapabilitiesFilter

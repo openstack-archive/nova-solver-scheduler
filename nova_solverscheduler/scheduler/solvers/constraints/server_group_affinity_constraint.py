@@ -21,6 +21,7 @@ LOG = logging.getLogger(__name__)
 
 
 class ServerGroupAffinityConstraint(constraints.BaseLinearConstraint):
+
     """Force to select hosts which host given server group."""
 
     def __init__(self, *args, **kwargs):
@@ -32,7 +33,7 @@ class ServerGroupAffinityConstraint(constraints.BaseLinearConstraint):
         num_instances = filter_properties.get('num_instances')
 
         constraint_matrix = [[True for j in xrange(num_instances)]
-                            for i in xrange(num_hosts)]
+                             for i in xrange(num_hosts)]
 
         policies = filter_properties.get('group_policies', [])
         if self.policy_name not in policies:
@@ -45,8 +46,8 @@ class ServerGroupAffinityConstraint(constraints.BaseLinearConstraint):
 
         if not group_hosts:
             constraint_matrix = [
-                    ([False for j in xrange(num_instances - 1)] + [True])
-                    for i in xrange(num_hosts)]
+                ([False for j in xrange(num_instances - 1)] + [True])
+                for i in xrange(num_hosts)]
         else:
             for i in xrange(num_hosts):
                 if hosts[i].host not in group_hosts:
@@ -60,11 +61,12 @@ class ServerGroupAffinityConstraint(constraints.BaseLinearConstraint):
 
 
 class ServerGroupAntiAffinityConstraint(constraints.BaseLinearConstraint):
+
     """Force to select hosts which host given server group."""
 
     def __init__(self, *args, **kwargs):
         super(ServerGroupAntiAffinityConstraint, self).__init__(
-                                                            *args, **kwargs)
+            *args, **kwargs)
         self.policy_name = 'anti-affinity'
 
     def get_constraint_matrix(self, hosts, filter_properties):
@@ -72,7 +74,7 @@ class ServerGroupAntiAffinityConstraint(constraints.BaseLinearConstraint):
         num_instances = filter_properties.get('num_instances')
 
         constraint_matrix = [[True for j in xrange(num_instances)]
-                            for i in xrange(num_hosts)]
+                             for i in xrange(num_hosts)]
 
         policies = filter_properties.get('group_policies', [])
         if self.policy_name not in policies:

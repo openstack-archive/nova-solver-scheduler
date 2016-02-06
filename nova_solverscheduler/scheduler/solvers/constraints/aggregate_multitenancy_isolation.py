@@ -18,7 +18,8 @@ from nova_solverscheduler.scheduler.solvers import constraints
 
 
 class AggregateMultiTenancyIsolationConstraint(
-                                            constraints.BaseFilterConstraint):
+        constraints.BaseFilterConstraint):
+
     """Isolate tenants in specific aggregates."""
     host_filter_cls = aggregate_multitenancy_isolation.\
-                            AggregateMultiTenancyIsolation
+        AggregateMultiTenancyIsolation

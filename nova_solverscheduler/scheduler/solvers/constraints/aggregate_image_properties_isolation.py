@@ -18,7 +18,8 @@ from nova_solverscheduler.scheduler.solvers import constraints
 
 
 class AggregateImagePropertiesIsolationConstraint(
-                                            constraints.BaseFilterConstraint):
+        constraints.BaseFilterConstraint):
+
     """AggregateImagePropertiesIsolation works with image properties."""
     host_filter_cls = aggregate_image_properties_isolation.\
-                            AggregateImagePropertiesIsolation
+        AggregateImagePropertiesIsolation

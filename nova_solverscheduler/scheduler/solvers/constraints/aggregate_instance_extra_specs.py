@@ -18,6 +18,7 @@ from nova_solverscheduler.scheduler.solvers import constraints
 
 
 class AggregateInstanceExtraSpecsConstraint(constraints.BaseFilterConstraint):
+
     """AggregateInstanceExtraSpecsFilter works with InstanceType records."""
     host_filter_cls = aggregate_instance_extra_specs.\
-                            AggregateInstanceExtraSpecsFilter
+        AggregateInstanceExtraSpecsFilter

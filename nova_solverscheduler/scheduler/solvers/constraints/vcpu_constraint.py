@@ -26,6 +26,7 @@ LOG = logging.getLogger(__name__)
 
 
 class VcpuConstraint(constraints.BaseLinearConstraint):
+
     """Constraint of the total vcpu demand acceptable on each host."""
 
     def _get_cpu_allocation_ratio(self, host_state, filter_properties):
@@ -36,7 +37,7 @@ class VcpuConstraint(constraints.BaseLinearConstraint):
         num_instances = filter_properties.get('num_instances')
 
         constraint_matrix = [[True for j in xrange(num_instances)]
-                            for i in xrange(num_hosts)]
+                             for i in xrange(num_hosts)]
 
         # get requested vcpus
         instance_type = filter_properties.get('instance_type') or {}
@@ -51,7 +52,7 @@ class VcpuConstraint(constraints.BaseLinearConstraint):
 
         for i in xrange(num_hosts):
             cpu_allocation_ratio = self._get_cpu_allocation_ratio(
-                                                hosts[i], filter_properties)
+                hosts[i], filter_properties)
             # get available vcpus
             if not hosts[i].vcpus_total:
                 LOG.warning(_LW("vCPUs of %(host)s not set; assuming CPU "
@@ -65,13 +66,13 @@ class VcpuConstraint(constraints.BaseLinearConstraint):
             if acceptable_num_instances < num_instances:
                 inacceptable_num = num_instances - acceptable_num_instances
                 constraint_matrix[i] = (
-                        [True for j in xrange(acceptable_num_instances)] +
-                        [False for j in xrange(inacceptable_num)])
+                    [True for j in xrange(acceptable_num_instances)] +
+                    [False for j in xrange(inacceptable_num)])
 
             LOG.debug("%(host)s can accept %(num)s requested instances "
-                        "according to VcpuConstraint.",
-                        {'host': hosts[i],
-                        'num': acceptable_num_instances})
+                      "according to VcpuConstraint.",
+                      {'host': hosts[i],
+                       'num': acceptable_num_instances})
 
             if vcpus_total > 0:
                 hosts[i].limits['vcpu'] = vcpus_total

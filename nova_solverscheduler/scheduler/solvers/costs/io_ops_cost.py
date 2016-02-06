@@ -28,10 +28,10 @@ from nova_solverscheduler.scheduler.solvers import costs as solver_costs
 from nova_solverscheduler.scheduler.solvers.costs import utils
 
 io_ops_cost_opts = [
-        cfg.FloatOpt('io_ops_cost_multiplier',
-                     default=1.0,
-                     help='Multiplier used for io ops cost. Negative '
-                          'numbers mean to stack vs spread.'),
+    cfg.FloatOpt('io_ops_cost_multiplier',
+                 default=1.0,
+                 help='Multiplier used for io ops cost. Negative '
+                 'numbers mean to stack vs spread.'),
 ]
 
 CONF = cfg.CONF
@@ -48,8 +48,8 @@ class IoOpsCost(solver_costs.BaseLinearCost):
         num_instances = filter_properties.get('num_instances')
 
         extended_cost_matrix = [
-                [hosts[i].num_io_ops + j for j in xrange(num_instances + 1)]
-                for i in xrange(num_hosts)]
+            [hosts[i].num_io_ops + j for j in xrange(num_instances + 1)]
+            for i in xrange(num_hosts)]
         extended_cost_matrix = utils.normalize_cost_matrix(
-                                                        extended_cost_matrix)
+            extended_cost_matrix)
         return extended_cost_matrix

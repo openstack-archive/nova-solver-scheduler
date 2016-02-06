@@ -18,6 +18,7 @@ from nova_solverscheduler.scheduler.solvers import constraints
 
 
 class SameHostConstraint(constraints.BaseFilterConstraint):
+
     """Schedule the instance on the same host as another instance in a set
     of instances.
     """
@@ -25,10 +26,12 @@ class SameHostConstraint(constraints.BaseFilterConstraint):
 
 
 class DifferentHostConstraint(constraints.BaseFilterConstraint):
+
     """Schedule the instance on a different host from a set of instances."""
     host_filter_cls = affinity_filter.DifferentHostFilter
 
 
 class SimpleCidrAffinityConstraint(constraints.BaseFilterConstraint):
+
     """Schedule the instance on a host with a particular cidr."""
     host_filter_cls = affinity_filter.SimpleCIDRAffinityFilter

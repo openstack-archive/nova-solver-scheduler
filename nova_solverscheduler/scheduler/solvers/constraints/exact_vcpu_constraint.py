@@ -22,6 +22,7 @@ LOG = logging.getLogger(__name__)
 
 
 class ExactVcpuConstraint(constraints.BaseLinearConstraint):
+
     """Constraint that selects hosts with exact number of vCPUs."""
 
     def get_constraint_matrix(self, hosts, filter_properties):
@@ -29,7 +30,7 @@ class ExactVcpuConstraint(constraints.BaseLinearConstraint):
         num_instances = filter_properties.get('num_instances')
 
         constraint_matrix = [[True for j in xrange(num_instances)]
-                            for i in xrange(num_hosts)]
+                             for i in xrange(num_hosts)]
 
         # get requested vcpus
         instance_type = filter_properties.get('instance_type') or {}
@@ -39,14 +40,14 @@ class ExactVcpuConstraint(constraints.BaseLinearConstraint):
             instance_vcpus = instance_type['vcpus']
         if instance_vcpus <= 0:
             LOG.warning(_LW("ExactVcpuConstraint is skipped because requested "
-                         "instance vCPU number is 0 or invalid."))
+                            "instance vCPU number is 0 or invalid."))
             return constraint_matrix
 
         for i in xrange(num_hosts):
             # get available vcpus
             if not hosts[i].vcpus_total:
                 LOG.warning(_LW("vCPUs of %(host)s not set; assuming CPU "
-                             "collection broken."), {'host': hosts[i]})
+                                "collection broken."), {'host': hosts[i]})
                 constraint_matrix[i] = [False for j in xrange(num_instances)]
                 continue
             else:
@@ -54,7 +55,7 @@ class ExactVcpuConstraint(constraints.BaseLinearConstraint):
 
             if instance_vcpus == usable_vcpus:
                 constraint_matrix[i] = (
-                        [True] + [False for j in xrange(num_instances - 1)])
+                    [True] + [False for j in xrange(num_instances - 1)])
             else:
                 constraint_matrix[i] = [False for j in xrange(num_instances)]
                 LOG.debug("%(host)s does not have exactly %(requested_num)s "

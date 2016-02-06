@@ -25,6 +25,7 @@ CONF.import_opt('max_io_ops_per_host', 'nova.scheduler.filters.io_ops_filter')
 
 
 class IoOpsConstraint(constraints.BaseLinearConstraint):
+
     """A constraint to ensure only those hosts are selected whose number of
     concurrent I/O operations are within a set threshold.
     """
@@ -36,7 +37,7 @@ class IoOpsConstraint(constraints.BaseLinearConstraint):
         num_instances = filter_properties.get('num_instances')
 
         constraint_matrix = [[True for j in xrange(num_instances)]
-                            for i in xrange(num_hosts)]
+                             for i in xrange(num_hosts)]
 
         for i in xrange(num_hosts):
             num_io_ops = hosts[i].num_io_ops
@@ -47,12 +48,12 @@ class IoOpsConstraint(constraints.BaseLinearConstraint):
             if acceptable_num_instances < num_instances:
                 inacceptable_num = (num_instances - acceptable_num_instances)
                 constraint_matrix[i] = (
-                        [True for j in xrange(acceptable_num_instances)] +
-                        [False for j in xrange(inacceptable_num)])
+                    [True for j in xrange(acceptable_num_instances)] +
+                    [False for j in xrange(inacceptable_num)])
 
             LOG.debug("%(host)s can accept %(num)s requested instances "
-                        "according to IoOpsConstraint.",
-                        {'host': hosts[i],
-                        'num': acceptable_num_instances})
+                      "according to IoOpsConstraint.",
+                      {'host': hosts[i],
+                       'num': acceptable_num_instances})
 
         return constraint_matrix

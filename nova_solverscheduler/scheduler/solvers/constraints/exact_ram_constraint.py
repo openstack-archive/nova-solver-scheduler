@@ -23,6 +23,7 @@ LOG = logging.getLogger(__name__)
 
 
 class ExactRamConstraint(constraints.BaseLinearConstraint):
+
     """Constraint that selects hosts with exact amount of RAM available."""
 
     def get_constraint_matrix(self, hosts, filter_properties):
@@ -30,14 +31,14 @@ class ExactRamConstraint(constraints.BaseLinearConstraint):
         num_instances = filter_properties.get('num_instances')
 
         constraint_matrix = [[True for j in xrange(num_instances)]
-                            for i in xrange(num_hosts)]
+                             for i in xrange(num_hosts)]
 
         # get requested ram
         instance_type = filter_properties.get('instance_type') or {}
         requested_ram = instance_type.get('memory_mb', 0)
         if 'memory_mb' not in instance_type:
             LOG.warning(_LW("No information about requested instances\' RAM size "
-                    "was found, default value (0) is used."))
+                            "was found, default value (0) is used."))
         if requested_ram <= 0:
             LOG.warning(_LW("ExactRamConstraint is skipped because requested "
                         "instance RAM size is 0 or invalid."))
@@ -46,7 +47,7 @@ class ExactRamConstraint(constraints.BaseLinearConstraint):
         for i in xrange(num_hosts):
             if requested_ram == hosts[i].free_ram_mb:
                 constraint_matrix[i] = (
-                        [True] + [False for j in xrange(num_instances - 1)])
+                    [True] + [False for j in xrange(num_instances - 1)])
             else:
                 constraint_matrix[i] = [False for j in xrange(num_instances)]
                 LOG.debug("%(host)s does not have exactly %(requested_ram)s MB"
