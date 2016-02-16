@@ -12,7 +12,7 @@ solvers.
 Overview
 --------
 
-Solver Scheduler is an OpenStack Nova scheduler driver that provides smart, efficient, and optimization based compute resource scheduling in Nova. It is a pluggable scheduler driver, that can leverage existing constraint solvers available in open source such as PULP, CVXOPT, Google OR-TOOLS, etc. It can be easily extended to add complex constraint models for various use cases, and to solve complex scheduling problems with pulggable solving frameworks.
+Solver Scheduler is an OpenStack Nova scheduler driver that provides smart, efficient, and optimization based compute resource scheduling in Nova. It is a pluggable scheduler driver, that can leverage existing constraint solvers available in open source such as PULP, CVXOPT, Google OR-TOOLS, etc. It can be easily extended to add complex constraint models for various use cases, and to solve complex scheduling problems with pluggable solving frameworks.
 
 From filter-scheduler to solver-scheduler
 -----------------------------------------
@@ -26,8 +26,8 @@ The nova-solver-scheduler works in a similar (but different) way as Nova's defau
 
 * Solver-scheduler architecture
 
-  * Scheduler driver: SolverScheduler. This is a driver that realizes constraint optimization based scheduling functionalities. It sits in parellel with FilterScheduler and can be used as an (advanced) alternative. It uses pluggable opeimization solver modules to solve scheduling problems.
-  * Solver drivers. The solver drivers are pluggavle optimization solvers that solve scheduling problems defined by its lower layer plug-in's, which are costs/constraints. The pluggable solvers provide more flexibility for complex scheduling scenarios as well as the ability to give more optimimal scheduling solutions.
+  * Scheduler driver: SolverScheduler. This is a driver that realizes constraint optimization based scheduling functionalities. It sits in parallel with FilterScheduler and can be used as an (advanced) alternative. It uses pluggable optimization solver modules to solve scheduling problems.
+  * Solver drivers. The solver drivers are pluggable optimization solvers that solve scheduling problems defined by its lower layer plug-in's, which are costs/constraints. The pluggable solvers provide more flexibility for complex scheduling scenarios as well as the ability to give more optimal scheduling solutions.
   * Configurable plug-ins: Costs/Constraints. Similar as weights/filters in the filter-scheduler. The constraints define the hard restrictions of hosts that cannot be violated, and the costs define the soft objectives that the scheduler should tend to achieve. Scheduler solver will give an overall optimized solution for the placement of all requested instances in each single instance creation request. The costs/constraints can be plugged and configured in a similar way as weights/filters in Nova's default filter scheduler.
 
 While it appears to the user that the solver scheduler with costs/constraints provides similar functionalities as filter scheduler with weights/filters, solver scheduler can be more efficient in large scale high amount scheduling problems (e.g. placing 500 instances in a 1000 node cluster in a single request), the scheduling solution from the solver scheduler is also more optimal compared with that from filter scheduler due to its more flexible designs.
