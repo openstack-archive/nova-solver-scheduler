@@ -110,7 +110,7 @@ Python. This problem is solved for an optimal solution using an external
 solver supported by PULP such as CLP_, CBC_, GLPK_, etc.  By default, PULP_
 uses the CBC_ solver, which is packaged with the `coinor.pulp`_ distribution.
 
-.. _`coinor.pulp`: https://pypi.python.org/pypi/coinor.pulp
+.. _`coinor.pulp`: https://pypi.org/project/coinor.pulp
 
 Additional Solver implementations are planned in the roadmap, that support
 pluggable constraints and costs.
