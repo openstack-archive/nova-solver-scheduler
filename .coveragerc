@@ -1,7 +1,0 @@
-[run]
-branch = True
-source = nova_solverscheduler
-omit = nova_solverscheduler/tests/*
-
-[report]
-ignore_errors = True
